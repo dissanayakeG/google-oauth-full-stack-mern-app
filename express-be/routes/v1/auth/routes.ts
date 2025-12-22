@@ -13,4 +13,7 @@ router.get('/me', jwtAuth, oAuthController.authUser);
 router.post('/refresh', oAuthController.refresh);
 router.post('/logout', oAuthController.logout);
 
+router.get('/gmail/labels', jwtAuth, oAuthController.getGmailLabels);
+router.get('/gmail/emails', jwtAuth, oAuthController.getGmailEmails);
+
 export default router;

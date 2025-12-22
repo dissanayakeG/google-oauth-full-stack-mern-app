@@ -84,8 +84,6 @@ export class OAuthController {
 
     refresh = async (req: Request, res: Response, next: NextFunction) => {
 
-        console.table(req.cookies);
-
         const refreshToken = req.cookies?.refreshToken;
 
         try {
@@ -156,5 +154,74 @@ export class OAuthController {
             res.sendStatus(500);
         }
     };
+
+    getGmailLabels = async (req: Request, res: Response, next: NextFunction) => {
+        console.log('getGmailLabels hit!');
+        try {
+            const user = req.user;
+
+            if (!user || typeof user === 'string') {
+                console.log('No valid user payload', user);
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+
+            const userId = (user as any).userId;
+            if (!userId) {
+                console.log('No userId in payload', user);
+                return res.status(401).json({ message: 'Unauthorized: User ID missing' });
+            }
+
+            const credentials = req.session?.credentials;
+            if (!credentials) {
+                console.log('no credentials');
+                return res.status(401).json({ message: 'No OAuth2 credentials found' });
+            }
+
+            const response = await this.oAuthservice.fetchGmailLabels(credentials);
+            const labels = response.data.labels || [];
+
+            console.log('Gmail labels fetched successfully');
+            res.json({ labels });
+
+        } catch (error) {
+            console.error('Error fetching Gmail labels:', error);
+            res.status(500).json({ message: 'Failed to fetch Gmail labels' });
+        }
+    }
+
+    getGmailEmails = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const user = req.user as { userId: string; email: string };
+
+            if (!user || !user.email) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+
+            const googleAccessToken = req.session?.credentials?.access_token;
+
+            if (!googleAccessToken) {
+                return res.status(401).json({ message: 'No Google OAuth access token found in session' });
+            }
+
+            // console.log('Session credentials:', {
+            //     hasAccessToken: !!req.session?.credentials?.access_token,
+            //     hasRefreshToken: !!req.session?.credentials?.refresh_token,
+            //     scope: req.session?.credentials?.scope,
+            //     tokenType: req.session?.credentials?.token_type
+            // });
+
+            const emails = await this.oAuthservice.fetchEmailsViaIMAP(googleAccessToken, user.email);
+            res.json({ emails });
+
+        } catch (error: any) {
+            console.error('Error fetching Gmail emails:', error);
+
+            if (error.message.includes('AUTHENTICATIONFAILED')) {
+                return res.status(401).json({ message: 'Token expired' });
+            }
+
+            res.status(500).json({ message: 'Failed to fetch Gmail emails' });
+        }
+    }
 
 }
