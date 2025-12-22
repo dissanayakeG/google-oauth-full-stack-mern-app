@@ -24,7 +24,14 @@ then import "./App.css" in App.tsx
 ```bash
 pnpm init
 
-pnpm add express @types/express @types/node eslint prettier helmet cors @types/cors bcrypt @types/bcrypt jsonwebtoken @types/jsonwebtoken dotenv zod sequelize sequelize-cli mysql2 http-status-codes googleapis express-session @types/express-session
+pnpm add express @types/express @types/node eslint prettier helmet cors @types/cors bcrypt @types/bcrypt jsonwebtoken @types/jsonwebtoken dotenv zod sequelize sequelize-cli mysql2 http-status-codes googleapis express-session @types/express-session 
+cookie-parser @types/cookie-parser
+```
+
+### run migrations
+
+```bash
+pnpm run migrate
 ```
 
 initial server
@@ -84,12 +91,11 @@ pnpm add -D tsx typescript
 
 # TODO
 
-```
-Improvement: Use a middleware
-
-to reuse Zod validation across multiple routes:
-
+```ts
+//Improvement: Use a middleware
+//to reuse Zod validation across multiple routes:
 // middlewares/validate.ts
+
 import { z, AnyZodObject } from 'zod';
 import { Request, Response, NextFunction } from 'express';
 
@@ -103,7 +109,7 @@ export const validate = (schema: AnyZodObject) => (req: Request, res: Response, 
 };
 
 
-in route:
+//in route:
 
 import { validate } from '../middlewares/validate';
 import { createUserSchema } from '../dtos/create-user.dto';

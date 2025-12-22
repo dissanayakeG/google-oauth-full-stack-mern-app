@@ -51,7 +51,7 @@ export const initUserModel = (sequelize: Sequelize): typeof User => {
         unique: true,
       },
       refreshToken: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true,
       },
       createdAt: DataTypes.DATE,

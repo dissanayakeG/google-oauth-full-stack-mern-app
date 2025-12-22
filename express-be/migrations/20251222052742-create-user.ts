@@ -16,7 +16,7 @@ export async function up(queryInterface: QueryInterface) {
       unique: true,
     },
     refreshToken: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     createdAt: DataTypes.DATE,

@@ -13,10 +13,13 @@ export class OAuthController {
         this.oAuthservice = new OAuthService();
         this.login = this.login.bind(this);
         this.callback = this.callback.bind(this);
+        this.refresh = this.refresh.bind(this);
+        this.authUser = this.authUser.bind(this);
+        this.logout = this.logout.bind(this);
     }
 
     login(req: Request, res: Response, next: NextFunction) {
-
+        console.log('login hit!');
         try {
             const state = crypto.randomBytes(32).toString('hex');
             req.session.state = state;
@@ -30,7 +33,7 @@ export class OAuthController {
     }
 
     async callback(req: Request<unknown, unknown, unknown, GoogleCallbackRequestQueryDTO>, res: Response, next: NextFunction) {
-
+        console.log('call back hit!');
         try {
 
             const { code, error, state } = req.query;
@@ -47,8 +50,6 @@ export class OAuthController {
 
             const { tokens, user: googleUser } = await this.oAuthservice.getGoogleUser(code);
 
-            console.log('callbecked:', tokens, googleUser);
-
             if (googleUser.id && googleUser.email && googleUser.name && googleUser.picture) {
                 const user = await this.oAuthservice.createOrUpdateUser({
                     id: googleUser.id,
@@ -57,29 +58,22 @@ export class OAuthController {
                     picture: googleUser.picture
                 });
 
-                // Generate Tokens
-                const accessToken = jwt.sign(
-                    { userId: user.id, email: user.email, name: user.name },
-                    Environment.JWT_SECRET as string,
-                    { expiresIn: Environment.ACCESS_TOKEN_EXPIRY as jwt.SignOptions['expiresIn'] }
-                );
+                // Generate new Access Token
+                // const accessToken = await this.oAuthservice.generateAccessToken(user);
 
-                const refreshToken = jwt.sign(
-                    { userId: user.id },
-                    Environment.REFRESH_TOKEN_SECRET as string,
-                    { expiresIn: Environment.REFRESH_TOKEN_EXPIRY as jwt.SignOptions['expiresIn'] }
-                );
+                // Generate new Access Token
+                const refreshToken = await this.oAuthservice.generateRefreshToken(user);
 
                 // Save refresh token to DB
                 await this.oAuthservice.saveRefreshToken(user.id, refreshToken);
 
                 // Send cookies
-                res.cookie('accessToken', accessToken, {
-                    httpOnly: true,
-                    secure: Environment.NODE_ENV === 'production',
-                    sameSite: 'lax',
-                    maxAge: 15 * 60 * 1000 // 15 mins to match ACCESS_TOKEN_EXPIRY logic roughly
-                });
+                // res.cookie('accessToken', accessToken, {
+                //     httpOnly: true,
+                //     secure: Environment.NODE_ENV === 'production',
+                //     sameSite: 'lax',
+                //     maxAge: 15 * 60 * 1000 // 15 mins to match ACCESS_TOKEN_EXPIRY logic roughly
+                // });
 
                 res.cookie('refreshToken', refreshToken, {
                     httpOnly: true,
@@ -91,7 +85,9 @@ export class OAuthController {
                 req.session.credentials = tokens;
                 req.session.userId = user.id;
 
-                res.redirect(`${Environment.FRONTEND_URL}/dashboard?auth=success`);
+                console.log('redirect:', `${Environment.FRONTEND_URL}/dashboard`, user.email);
+
+                res.redirect(`${Environment.FRONTEND_URL}/dashboard`);
             } else {
                 console.error('Missing user info from Google');
                 res.redirect(`${Environment.FRONTEND_URL}/?auth=failed&error=missing_info`);
@@ -106,5 +102,76 @@ export class OAuthController {
         }
 
     }
+
+    async refresh(req: Request, res: Response, next: NextFunction) {
+
+        console.table(req.cookies);
+
+        const refreshToken = req.cookies?.refreshToken;
+
+        try {
+            if (!refreshToken) {
+                return res.status(401).json({ message: 'No refresh token provided' });
+            }
+
+            const decoded = await this.oAuthservice.verifyRefreshToken(refreshToken);
+            // debugger
+            const user = await this.oAuthservice.findUserByRefreshToken(refreshToken);
+
+            console.log('USER:', user);
+            console.log('decoded:', decoded);
+
+            if (!user) {
+                throw new Error('Refresh token does not match any user');
+                return res.status(403).json({ message: 'User not found!' });
+            }
+
+            // Invalidate the old token
+            await this.oAuthservice.clearRefreshToken(decoded.userId);
+
+            // Issue new Access Token
+            const accessToken = await this.oAuthservice.generateAccessToken(user);
+
+            // Generate new refresh Token
+            const newRefreshToken = await this.oAuthservice.generateRefreshToken(user);
+
+            // Save refresh token to DB
+            await this.oAuthservice.saveRefreshToken(user.id, newRefreshToken);
+
+            res.cookie('refreshToken', newRefreshToken, {
+                httpOnly: true,
+                secure: Environment.NODE_ENV === 'production',
+                sameSite: 'lax',
+                expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            });
+
+            res.json({ message: 'Token refreshed', accessToken });
+
+        } catch (err) {
+            return res.status(403).json({ message: 'Invalid or expired refresh token' + err });
+        }
+    }
+
+    async authUser(req: Request, res: Response, next: NextFunction) {
+        res.json({ user: req.user });
+    }
+
+    async logout  (req: Request, res: Response)  {
+        try {
+            const refreshToken = req.cookies.refreshToken;
+            const user = await this.oAuthservice.findUserByRefreshToken(refreshToken);
+
+            if (refreshToken) await this.oAuthservice.clearRefreshToken(user.id);
+
+            res.clearCookie("refreshToken", {
+                httpOnly: true,
+                secure: Environment.NODE_ENV === "production",
+                sameSite: "strict",
+            });
+            res.sendStatus(204);
+        } catch (err) {
+            res.sendStatus(500);
+        }
+    };
 
 }
