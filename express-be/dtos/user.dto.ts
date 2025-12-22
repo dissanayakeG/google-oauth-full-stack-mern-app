@@ -7,7 +7,7 @@ export const createUserSchema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
     picture: z.string().url().optional(),
     googleId: z.string().optional(),
-    refreshToken: z.string().optional()
+    refreshToken: z.string().nullable().optional()
 
 });
 

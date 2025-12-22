@@ -88,8 +88,7 @@ export class OAuthService {
         try {
             await User.update({ refreshToken: null }, { where: { id: userId } });
         } catch (error) {
-            console.log('clearRefreshTokenerror:::::',error);
-            // throw new Error('Failed to clear refresh token');
+            throw new Error('Failed to clear refresh token');
         }
     }
 

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useAuth } from "../providers/AuthContext";
-import api, { setApiToken } from "../api";
+import api from "../api";
 
 export default function Dashboard() {
 
@@ -9,17 +9,12 @@ export default function Dashboard() {
     useEffect(() => {
         const bootstrapAuth = async () => {
             try {
-                const { data } = await api.post('/auth/refresh', {}, { withCredentials: true });
-
-                console.log('data', data);
-                setApiToken(data.accessToken);
-
                 const me = await api.get('/auth/me');
                 setUser(me.data);
 
             } catch (error) {
                 console.log('Auth bootstrap failed:', error);
-                window.location.href = '/login';
+                window.location.href = '/login'; 
             }
         }
 

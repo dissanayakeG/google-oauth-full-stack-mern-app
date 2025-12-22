@@ -3,22 +3,12 @@ import crypto from 'crypto';
 import { OAuthService } from "../services/oauth.service";
 import Environment from "../config/env.config";
 import { GoogleCallbackRequestQueryDTO } from "../types/oauth.dto";
-import jwt from 'jsonwebtoken';
 
 export class OAuthController {
 
-    private oAuthservice: OAuthService;
+    private oAuthservice = new OAuthService();
 
-    constructor() {
-        this.oAuthservice = new OAuthService();
-        this.login = this.login.bind(this);
-        this.callback = this.callback.bind(this);
-        this.refresh = this.refresh.bind(this);
-        this.authUser = this.authUser.bind(this);
-        this.logout = this.logout.bind(this);
-    }
-
-    login(req: Request, res: Response, next: NextFunction) {
+    login = (req: Request, res: Response, next: NextFunction) => {
         console.log('login hit!');
         try {
             const state = crypto.randomBytes(32).toString('hex');
@@ -32,7 +22,7 @@ export class OAuthController {
         }
     }
 
-    async callback(req: Request<unknown, unknown, unknown, GoogleCallbackRequestQueryDTO>, res: Response, next: NextFunction) {
+    callback = async (req: Request<unknown, unknown, unknown, GoogleCallbackRequestQueryDTO>, res: Response, next: NextFunction) => {
         console.log('call back hit!');
         try {
 
@@ -59,21 +49,10 @@ export class OAuthController {
                 });
 
                 // Generate new Access Token
-                // const accessToken = await this.oAuthservice.generateAccessToken(user);
-
-                // Generate new Access Token
                 const refreshToken = await this.oAuthservice.generateRefreshToken(user);
 
                 // Save refresh token to DB
                 await this.oAuthservice.saveRefreshToken(user.id, refreshToken);
-
-                // Send cookies
-                // res.cookie('accessToken', accessToken, {
-                //     httpOnly: true,
-                //     secure: Environment.NODE_ENV === 'production',
-                //     sameSite: 'lax',
-                //     maxAge: 15 * 60 * 1000 // 15 mins to match ACCESS_TOKEN_EXPIRY logic roughly
-                // });
 
                 res.cookie('refreshToken', refreshToken, {
                     httpOnly: true,
@@ -103,7 +82,7 @@ export class OAuthController {
 
     }
 
-    async refresh(req: Request, res: Response, next: NextFunction) {
+    refresh = async (req: Request, res: Response, next: NextFunction) => {
 
         console.table(req.cookies);
 
@@ -123,7 +102,11 @@ export class OAuthController {
 
             if (!user) {
                 throw new Error('Refresh token does not match any user');
-                return res.status(403).json({ message: 'User not found!' });
+
+            }
+
+            if (typeof decoded === 'string') {
+                throw new Error('Invalid token structure');
             }
 
             // Invalidate the old token
@@ -152,16 +135,16 @@ export class OAuthController {
         }
     }
 
-    async authUser(req: Request, res: Response, next: NextFunction) {
+    authUser = async (req: Request, res: Response, next: NextFunction) => {
         res.json({ user: req.user });
     }
 
-    async logout  (req: Request, res: Response)  {
+    logout = async (req: Request, res: Response) => {
         try {
             const refreshToken = req.cookies.refreshToken;
             const user = await this.oAuthservice.findUserByRefreshToken(refreshToken);
 
-            if (refreshToken) await this.oAuthservice.clearRefreshToken(user.id);
+            if (refreshToken && user) await this.oAuthservice.clearRefreshToken(user.id);
 
             res.clearCookie("refreshToken", {
                 httpOnly: true,

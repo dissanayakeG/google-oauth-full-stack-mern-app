@@ -16,7 +16,7 @@ export class User extends Model<
   declare email: string;
   declare picture?: string;
   declare googleId?: string;
-  declare refreshToken?: string;
+  declare refreshToken?: string | null;
   declare readonly createdAt: CreationOptional<Date>;
   declare readonly updatedAt: CreationOptional<Date>;
 

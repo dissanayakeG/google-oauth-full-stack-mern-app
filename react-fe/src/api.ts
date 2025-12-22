@@ -74,7 +74,7 @@ api.interceptors.response.use(
 
                 return api(originalRequest);
             } catch (refreshError) {
-                processQueue(err, null);
+                processQueue(refreshError, null);
                 setApiToken(null);
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
