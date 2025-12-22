@@ -1,12 +1,12 @@
 import { Request, Response, Router } from "express";
-import { CreateUserDTO } from "../dtos/user.dto";
-import { User } from "../models/user";
-import { createUserSchema } from "../dtos/create-user.dto";
+import { CreateUserDTO, createUserSchema } from "../../dtos/user.dto";
+import { User } from "../../models/user";
 
 const router = Router();
 
 router.post('/add-user', async (req: Request<{}, {}, CreateUserDTO>, res: Response) => {
 
+    console.log('qqqqqqq');
 
 
     try {

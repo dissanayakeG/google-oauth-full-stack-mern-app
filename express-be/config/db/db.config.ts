@@ -1,6 +1,6 @@
-import {Sequelize} from "sequelize";
-import Environment from "./env.config";
-import {initUserModel} from '../models/user'
+import { Sequelize } from "sequelize";
+import Environment from "../env.config";
+import { initUserModel } from '../../models/user'
 
 const sequelize = new Sequelize(
     Environment.DB_NAME,
@@ -13,15 +13,15 @@ const sequelize = new Sequelize(
     }
 )
 
-export const connetDB = async () =>{
-    try{
+export const connetDB = async () => {
+    try {
         await sequelize.authenticate();
         console.log('Database connected');
 
-        await sequelize.sync({force: true});
-        console.log('Database synchronized');   
+        await sequelize.sync({ force: true });
+        console.log('Database synchronized');
 
-    }catch(error){
+    } catch (error) {
         console.error('Unable to connect to the database:', error);
     }
 }

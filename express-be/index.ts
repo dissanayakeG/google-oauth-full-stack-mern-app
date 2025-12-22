@@ -1,9 +1,10 @@
 import Environment from "./config/env.config";
 import express from "express";
 import cors from "cors";
-import authRoutes from "./routes/auth/routes";
-import testRoutes from "./routes/test";
-import { connetDB } from "./config/db.config";
+import oAuthRoutes from "./routes/v1/auth/routes";
+import testRoutes from "./routes/v1/test";
+import { connetDB } from "./config/db/db.config";
+import session from "express-session";
 
 const app = express();
 
@@ -11,13 +12,25 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+app.use(
+  session({
+    secret: 'your-secret-key',
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      secure: false,      // use true HTTPS
+      httpOnly: true,
+      sameSite: 'lax',    // this allows redirects from Google to preserve the cookie
+    }, 
+  })
+);
+
 app.get("/", (req, res) => {
     res.send("Hello World!");
 });
 
-app.use('/test', testRoutes);
-app.use('/auth', authRoutes);
-
+app.use('/api/v1/test', testRoutes);
+app.use('/api/v1/auth', oAuthRoutes);
 
 connetDB().then(() => {
     app.listen(Environment.PORT, () => {

@@ -11,9 +11,12 @@ export class User extends Model<
   InferAttributes<User>,
   InferCreationAttributes<User>
 > {
-  declare id: CreationOptional<number>;
+  declare id: CreationOptional<string>;
   declare name: string;
   declare email: string;
+  declare picture?: string;
+  declare googleId?: string;
+  declare refreshToken?: string;
   declare readonly createdAt: CreationOptional<Date>;
   declare readonly updatedAt: CreationOptional<Date>;
 
@@ -26,8 +29,8 @@ export const initUserModel = (sequelize: Sequelize): typeof User => {
   User.init(
     {
       id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.STRING,
+        autoIncrement: false,
         primaryKey: true,
       },
       name: {
@@ -35,6 +38,21 @@ export const initUserModel = (sequelize: Sequelize): typeof User => {
       },
       email: {
         type: DataTypes.STRING,
+        allowNull: false,
+        unique: false//only for dev testing,
+      },
+      picture: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      googleId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+      },
+      refreshToken: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE,

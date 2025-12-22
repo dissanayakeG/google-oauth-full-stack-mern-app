@@ -4,11 +4,21 @@ export async function up(queryInterface: QueryInterface) {
   await queryInterface.createTable('Users', {
     id: {
       primaryKey: true,
-      autoIncrement: true,
-      type: DataTypes.INTEGER,
+      autoIncrement: false,
+      type: DataTypes.STRING,
     },
     name: DataTypes.STRING,
     email: DataTypes.STRING,
+    picture: DataTypes.STRING,
+    googleId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+    refreshToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
   });
