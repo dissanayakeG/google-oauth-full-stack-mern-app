@@ -1,0 +1,10 @@
+express-be/node_modules/
+express-be/.env
+
+react-fe/node_modules/
+react-fe/.env
+
+
+.DS_Store
+.vscode/
+.idea/
