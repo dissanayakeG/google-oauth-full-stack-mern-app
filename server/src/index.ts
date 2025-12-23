@@ -8,13 +8,10 @@ import { globalErrorHandler } from "./middlewares/globalErrorHandler";
 import { AppError } from "./errors/AppError";
 import { requestLogger } from "./middlewares/requestLogger";
 
-
 const app = express();
 
 //these two required to access the req.body
 app.use(express.json());
-// app.use(cors());
-
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true,
@@ -44,8 +41,7 @@ app.use(cookieParser());
 // Logger middleware
 app.use(requestLogger);
 
-//All routes
-
+// Routes
 app.get("/", (req, res) => {
     res.send("Hello World!");
 });
@@ -53,18 +49,12 @@ app.get("/", (req, res) => {
 app.use('/api/v1/test', testRoutes);
 app.use('/api/v1/auth', oAuthRoutes);
 
-// 404
-// app.all('*', (req, res, next) => {
-//   next(new AppError(`Route ${req.originalUrl} not found`, 404));
-// });
-
-//Runs only if no route matched, above is now working in express 5
+// Runs only if no route matched
 app.use((req, res, next) => {
   next(new AppError(`Route ${req.originalUrl} not found`, 404));
 });
 
-// error handler LAST
+// Global error handler
 app.use(globalErrorHandler);
-
 
 export default app;
