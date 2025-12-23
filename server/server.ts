@@ -1,4 +1,4 @@
-import { connetDB } from './src/config/db/db.config';
+import { connetDB } from './src/config/db.config';
 import Environment from './src/config/env.config';
 import app from './src/index';
 import { logger } from './src/utils/logger';

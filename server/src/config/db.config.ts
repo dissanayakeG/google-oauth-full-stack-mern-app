@@ -1,7 +1,7 @@
 import { Sequelize } from "sequelize";
-import Environment from "../env.config";
-import { initUserModel } from '../../models/user'
-import { logger } from "../../utils/logger";
+import Environment from "./env.config";
+import { initUserModel } from '../models/user'
+import { logger } from "../utils/logger";
 
 const sequelize = new Sequelize(
     Environment.DB_NAME,
