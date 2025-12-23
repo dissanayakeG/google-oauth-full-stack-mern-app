@@ -1,6 +1,7 @@
 import { Sequelize } from "sequelize";
 import Environment from "../env.config";
 import { initUserModel } from '../../models/user'
+import { logger } from "../../utils/logger";
 
 const sequelize = new Sequelize(
     Environment.DB_NAME,
@@ -16,13 +17,13 @@ const sequelize = new Sequelize(
 export const connetDB = async () => {
     try {
         await sequelize.authenticate();
-        console.log('Database connected');
+        logger.info('Database connected');
 
         await sequelize.sync({ force: false });
-        console.log('Database synchronized');
+        logger.info('Database synchronized');
 
     } catch (error) {
-        console.error('Unable to connect to the database:', error);
+        logger.error(`Unable to connect to the database:' ${error}`);
     }
 }
 

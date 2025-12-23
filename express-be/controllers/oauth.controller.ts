@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { OAuthService } from "../services/oauth.service";
 import Environment from "../config/env.config";
 import { GoogleCallbackRequestQueryDTO } from "../types/oauth.dto";
+import { logger } from "../utils/logger";
 
 export class OAuthController {
 
@@ -22,12 +23,12 @@ export class OAuthController {
         const { code, error, state } = req.query;
 
         if (error) {
-            console.log('Error from google:', error)
+            logger.error(`OAuth callback error ${error}`);
             return res.redirect(`${Environment.FRONTEND_URL}/?auth=failed&error=${encodeURIComponent(error)}`);
         }
 
         if (state !== req.session?.state) {
-            console.error('State mismatch. Possible CSRF attack');
+            logger.error('State mismatch. Possible CSRF attack');
             return res.redirect(`${Environment.FRONTEND_URL}/?auth=failed&error=csrf`);
         }
 
@@ -57,11 +58,11 @@ export class OAuthController {
             req.session.credentials = tokens;
             req.session.userId = user.id;
 
-            console.log('redirect:', `${Environment.FRONTEND_URL}/dashboard`, user.email);
+            logger.info({ user }, `redirect: ${Environment.FRONTEND_URL}/dashboard`);
 
             res.redirect(`${Environment.FRONTEND_URL}/dashboard`);
         } else {
-            console.error('Missing user info from Google');
+            logger.error('Missing user info from Google');
             res.redirect(`${Environment.FRONTEND_URL}/?auth=failed&error=missing_info`);
         }
 
@@ -79,8 +80,8 @@ export class OAuthController {
         // debugger
         const user = await this.oAuthservice.findUserByRefreshToken(refreshToken);
 
-        console.log('USER:', user);
-        console.log('decoded:', decoded);
+        logger.info({ user }, 'USER:');
+        logger.info({ decoded }, 'decoded:');
 
         if (!user) {
             throw new Error('Refresh token does not match any user');
@@ -134,35 +135,35 @@ export class OAuthController {
     };
 
     getGmailLabels = async (req: Request, res: Response, next: NextFunction) => {
-        console.log('getGmailLabels hit!');
+        logger.info('getGmailLabels hit!');
         try {
             const user = req.user;
 
             if (!user || typeof user === 'string') {
-                console.log('No valid user payload', user);
+                logger.info({ user }, 'No valid user payload');
                 return res.status(401).json({ message: 'Unauthorized' });
             }
 
             const userId = (user as any).userId;
             if (!userId) {
-                console.log('No userId in payload', user);
+                logger.info({ user }, 'No userId in payload');
                 return res.status(401).json({ message: 'Unauthorized: User ID missing' });
             }
 
             const credentials = req.session?.credentials;
             if (!credentials) {
-                console.log('no credentials');
+                logger.info('no credentials');
                 return res.status(401).json({ message: 'No OAuth2 credentials found' });
             }
 
             const response = await this.oAuthservice.fetchGmailLabels(credentials);
             const labels = response.data.labels || [];
 
-            console.log('Gmail labels fetched successfully');
+            logger.info('Gmail labels fetched successfully');
             res.json({ labels });
 
         } catch (error) {
-            console.error('Error fetching Gmail labels:', error);
+            logger.error(`Error fetching Gmail labels: ${error}`);
             res.status(500).json({ message: 'Failed to fetch Gmail labels' });
         }
     }
@@ -181,18 +182,18 @@ export class OAuthController {
                 return res.status(401).json({ message: 'No Google OAuth access token found in session' });
             }
 
-            // console.log('Session credentials:', {
+            // logger.info({
             //     hasAccessToken: !!req.session?.credentials?.access_token,
             //     hasRefreshToken: !!req.session?.credentials?.refresh_token,
             //     scope: req.session?.credentials?.scope,
             //     tokenType: req.session?.credentials?.token_type
-            // });
+            // }, 'Session credentials:');
 
             const emails = await this.oAuthservice.fetchEmailsViaIMAP(googleAccessToken, user.email);
             res.json({ emails });
 
         } catch (error: any) {
-            console.error('Error fetching Gmail emails:', error);
+            logger.error(`Error fetching Gmail emails: ${error}`);
 
             if (error.message.includes('AUTHENTICATIONFAILED')) {
                 return res.status(401).json({ message: 'Token expired' });

@@ -1,12 +1,14 @@
 import { User } from "../config/db/db.config";
 import { CreateUserDTO, createUserSchema } from "../dtos/user.dto";
 import { ValidationError } from "../errors/ValidationError";
+import { logger } from "../utils/logger";
 
 export class TestService {
 
     async addUser(data: CreateUserDTO) {
 
-        console.log('Service received data:');
+        logger.info({ data }, "TestService addUser called");
+
         const parsedBody = createUserSchema.safeParse(data);
 
         if (!parsedBody.success) {
