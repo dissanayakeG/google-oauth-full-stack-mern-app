@@ -5,6 +5,10 @@ import { CreateUserDTO } from '../dtos/user.dto';
 import { User } from '../models/user';
 import jwt from 'jsonwebtoken';
 import { ImapFlow } from 'imapflow';
+import { ValidationError } from '../errors/ValidationError';
+import { InternalServerError } from '../errors/InternalServerError';
+import { ConfigError } from '../errors/ConfigError';
+import { UnauthorizedError } from '../errors/UnauthorizedError';
 
 
 export class OAuthService {
@@ -49,8 +53,8 @@ export class OAuthService {
     }
 
     async createOrUpdateUser(userData: CreateUserDTO): Promise<User> {
-        if (!userData.id) { // googleId in controller
-            throw new Error("Google ID is required");
+        if (!userData.id) {
+            throw new ValidationError("Google ID is required", []);
         }
 
         const [user, created] = await User.findOrCreate({
@@ -91,13 +95,13 @@ export class OAuthService {
         try {
             await User.update({ refreshToken: null }, { where: { id: userId } });
         } catch (error) {
-            throw new Error('Failed to clear refresh token');
+            throw new InternalServerError('Failed to clear refresh token');
         }
     }
 
     async generateAccessToken(user: CreateUserDTO): Promise<string> {
-        if (!process.env.JWT_SECRET) {
-            throw new Error('JWT_SECRET is not defined in environment variables');
+        if (!Environment.JWT_SECRET) {
+            throw new ConfigError('JWT_SECRET is not defined');
         }
 
         const token = jwt.sign(
@@ -111,7 +115,7 @@ export class OAuthService {
 
     async generateRefreshToken(user: User): Promise<string> {
         if (!Environment.REFRESH_TOKEN_SECRET) {
-            throw new Error('JWT_REFRESH_SECRET is not defined in environment variables');
+            throw new ConfigError('REFRESH_TOKEN_SECRET is not defined');
         }
 
         const token = jwt.sign(
@@ -125,16 +129,25 @@ export class OAuthService {
 
     async verifyRefreshToken(token: string) {
         if (!Environment.REFRESH_TOKEN_SECRET) {
-            throw new Error('JWT_REFRESH_SECRET is not defined in environment variables');
+            throw new ConfigError('REFRESH_TOKEN_SECRET is not defined');
         }
-        return jwt.verify(token, Environment.REFRESH_TOKEN_SECRET);
+        try {
+            return jwt.verify(token, Environment.REFRESH_TOKEN_SECRET);
+        } catch {
+            throw new UnauthorizedError('Invalid or expired refresh token');
+        }
     }
 
     async verifyAccessToken(token: string) {
         if (!Environment.JWT_SECRET) {
-            throw new Error('JWT_SECRET is not defined in environment variables');
+            throw new ConfigError('JWT_SECRET is not defined');
+
         }
-        return jwt.verify(token, Environment.JWT_SECRET);
+        try {
+            return jwt.verify(token, Environment.JWT_SECRET);
+        } catch {
+            throw new UnauthorizedError('Invalid or expired access token');
+        }
     }
 
     fetchGmailLabels(credentials: Auth.Credentials) {

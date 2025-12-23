@@ -6,6 +6,8 @@ import testRoutes from "./routes/v1/test";
 import { connetDB } from "./config/db/db.config";
 import session from "express-session";
 import cookieParser from 'cookie-parser';
+import { AppError } from "./errors/AppError";
+import { globalErrorHandler } from "./middlewares/globalErrorHandler";
 
 
 const app = express();
@@ -46,6 +48,19 @@ app.get("/", (req, res) => {
 
 app.use('/api/v1/test', testRoutes);
 app.use('/api/v1/auth', oAuthRoutes);
+
+// 404
+// app.all('*', (req, res, next) => {
+//   next(new AppError(`Route ${req.originalUrl} not found`, 404));
+// });
+
+//Runs only if no route matched, above is now working in express 5
+app.use((req, res, next) => {
+  next(new AppError(`Route ${req.originalUrl} not found`, 404));
+});
+
+// error handler LAST
+app.use(globalErrorHandler);
 
 connetDB().then(() => {
     app.listen(Environment.PORT, () => {
