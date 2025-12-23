@@ -56,7 +56,7 @@ export class EmailController {
                 return res.status(401).json({ message: 'No Google OAuth access token found in session' });
             }
 
-            const emails = await this.emailService.fetchEmailsViaIMAP(googleAccessToken, user.email);
+            const emails = await this.emailService.fetchGmailEmails(googleAccessToken, user.email);
             res.json({ emails });
 
         } catch (error: any) {

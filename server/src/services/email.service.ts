@@ -2,6 +2,8 @@ import { ImapFlow } from 'imapflow';
 import { logger } from '../utils/logger';
 import { createOAuth2Client } from '../config/google.config';
 import { Auth, google } from 'googleapis';
+import { requestLogger } from '../middlewares/requestLogger';
+import ImapFlowClient from './support/imap';
 
 export class EmailService {
 
@@ -13,29 +15,11 @@ export class EmailService {
         return gmail.users.labels.list({ userId: 'me' });
     }
 
-    async fetchEmailsViaIMAP(accessToken: string, userEmail: string) {
-        const { ImapFlow } = await import('imapflow');
-        const client = new ImapFlow({
-            host: 'imap.gmail.com',
-            port: 993,
-            secure: true,
-            auth: {
-                user: userEmail,
-                accessToken: accessToken,
-            },
-            logger: {
-                debug: (obj: any) => logger.debug('IMAP DEBUG:', obj),
-                info: (obj: any) => logger.info({ obj }, 'IMAP INFO:'),
-                warn: (obj: any) => logger.warn({ obj }, 'IMAP WARN:'),
-                error: (obj: any) => logger.error('IMAP ERROR:', obj)
-            }
-        });
+    async fetchGmailEmails(accessToken: string, userEmail: string) {
+        const client = await ImapFlowClient(accessToken, userEmail);
 
-        return await this.fetchEmails(client).catch(console.error);
-    }
-
-    async fetchEmails(client: ImapFlow) {
         await client.connect();
+
         logger.info('IMAP: Connected successfully');
         let lock = await client.getMailboxLock('INBOX');
         try {
@@ -55,9 +39,15 @@ export class EmailService {
                     flags: true
                 });
 
+
                 for (let message of messages) {
+                    
                     const seen = message.flags.has('\\Seen') ? '' : '[UNREAD] ';
                     logger.info(`${seen}${message.uid}: ${message.envelope.subject}`);
+
+                    const { content } = await client.download(message.uid, 'TEXT');
+                    let a = content.toString();
+                    logger.info({ a,message }, "😁😁😁😁😁😁😁😁😁")
 
                     emails.push({
                         id: message.uid,
