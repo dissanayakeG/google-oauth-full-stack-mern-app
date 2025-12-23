@@ -16,7 +16,7 @@ export default function Dashboard() {
 
             } catch (error) {
                 console.log('Auth bootstrap failed:', error);
-                // window.location.href = '/login';
+                window.location.href = '/login';
             }
         }
 
@@ -40,7 +40,17 @@ export default function Dashboard() {
 
     const handleFetchEmails = async () => {
         try {
-            const emailsRes = await api.get('/email/emails');
+            const emailsRes = await api.get('/email/fetch');
+            setEmails(emailsRes.data.emails);
+            console.log('Emails:', emailsRes.data.emails);
+        } catch (error) {
+            console.error('Failed to fetch Gmail emails:', error);
+        }
+    }
+
+    const handleFetchEmailsDB = async () => {
+        try {
+            const emailsRes = await api.get('/email/list');
             setEmails(emailsRes.data.emails);
             console.log('Emails:', emailsRes.data.emails);
         } catch (error) {
@@ -58,6 +68,7 @@ export default function Dashboard() {
                 <button onClick={handleLogout}>Logout</button>
                 <button onClick={handleFetchLabels}>Fetch Labels</button>
                 <button onClick={handleFetchEmails}>Fetch Emails</button>
+                <button onClick={handleFetchEmailsDB}>Fetch Emails DB</button>
             </div>
 
             <div style={{ display: 'flex', gap: '40px' }}>

@@ -1,3 +1,4 @@
+import { UnauthorizedError } from "../errors/UnauthorizedError";
 import { EmailService } from "../services/email.service";
 import { logger } from "../utils/logger";
 import { NextFunction, Request, Response } from "express";
@@ -7,66 +8,86 @@ export class EmailController {
 
     private emailService = new EmailService();
 
-
     getGmailLabels = async (req: Request, res: Response, next: NextFunction) => {
         logger.info('getGmailLabels hit!');
-        try {
-            const user = req.user;
 
-            if (!user || typeof user === 'string') {
-                logger.info({ user }, 'No valid user payload');
-                return res.status(401).json({ message: 'Unauthorized' });
-            }
+        const user = req.user;
 
-            const userId = (user as any).userId;
-            if (!userId) {
-                logger.info({ user }, 'No userId in payload');
-                return res.status(401).json({ message: 'Unauthorized: User ID missing' });
-            }
-
-            const credentials = req.session?.credentials;
-            if (!credentials) {
-                logger.info('no credentials');
-                return res.status(401).json({ message: 'No OAuth2 credentials found' });
-            }
-
-            const response = await this.emailService.fetchGmailLabels(credentials);
-            const labels = response.data.labels || [];
-
-            logger.info('Gmail labels fetched successfully');
-            res.json({ labels });
-
-        } catch (error) {
-            logger.error(`Error fetching Gmail labels: ${error}`);
-            res.status(500).json({ message: 'Failed to fetch Gmail labels' });
+        if (!user || typeof user === 'string') {
+            throw new UnauthorizedError('No refresh token provided');
         }
+
+        const userId = (user as any).userId;
+        if (!userId) {
+            throw new UnauthorizedError('Unauthorized: User ID missing');
+        }
+
+        const credentials = req.session?.credentials;
+        if (!credentials) {
+            throw new UnauthorizedError('No OAuth2 credentials found');
+        }
+
+        const response = await this.emailService.fetchGmailLabels(credentials);
+        const labels = response.data.labels || [];
+
+        logger.info('Gmail labels fetched successfully');
+
+        res.json({ labels });
     }
 
     getGmailEmails = async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const user = req.user as { userId: string; email: string };
 
-            if (!user || !user.email) {
-                return res.status(401).json({ message: 'Unauthorized' });
-            }
+        const user = req.user as { userId: string; email: string };
 
-            const googleAccessToken = req.session?.credentials?.access_token;
-
-            if (!googleAccessToken) {
-                return res.status(401).json({ message: 'No Google OAuth access token found in session' });
-            }
-
-            const emails = await this.emailService.fetchGmailEmails(googleAccessToken, user.email);
-            res.json({ emails });
-
-        } catch (error: any) {
-            logger.error(`Error fetching Gmail emails: ${error}`);
-
-            if (error.message.includes('AUTHENTICATIONFAILED')) {
-                return res.status(401).json({ message: 'Token expired' });
-            }
-
-            res.status(500).json({ message: 'Failed to fetch Gmail emails' });
+        if (!user || !user.email) {
+            throw new UnauthorizedError('No OAuth2 credentials found');
         }
+
+        const googleAccessToken = req.session?.credentials?.access_token;
+
+        if (!googleAccessToken) {
+            throw new UnauthorizedError('No Google OAuth access token found in session');
+        }
+
+        const emails = await this.emailService.fetchGmailEmails(googleAccessToken, user.email, user.userId);
+        res.json({ emails });
+    }
+
+
+    /**
+     * Get a single email with body by ID
+     */
+    getEmailById = async (req: Request, res: Response, next: NextFunction) => {
+
+        const user = req.user as { userId: string };
+        const emailId = parseInt(req.params.id);
+
+        if (!user || !user.userId) {
+            throw new UnauthorizedError();
+        }
+
+        if (isNaN(emailId)) {
+            return res.status(400).json({ message: 'Invalid email ID' });
+        }
+
+        const email = await this.emailService.getEmailBody(emailId, user.userId);
+        res.json({ email });
+    }
+
+    /**
+     * get all user emails from db
+     */
+    listUserEmails = async (req: Request, res: Response, next: NextFunction) => {
+
+        const user = req.user as { userId: string };
+        const limit = parseInt(req.query.limit as string) || 50;
+        const offset = parseInt(req.query.offset as string) || 0;
+
+        if (!user || !user.userId) {
+            throw new UnauthorizedError();
+        }
+
+        const emails = await this.emailService.getUserEmails(user.userId, limit, offset);
+        res.json({ emails, limit, offset });
     }
 }

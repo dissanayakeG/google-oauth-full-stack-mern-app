@@ -17,6 +17,7 @@ export class User extends Model<
   declare picture?: string;
   declare googleId?: string;
   declare refreshToken?: string | null;
+  declare preferences?: object | null;
   declare readonly createdAt: CreationOptional<Date>;
   declare readonly updatedAt: CreationOptional<Date>;
 
@@ -54,6 +55,11 @@ export const initUserModel = (sequelize: Sequelize): typeof User => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      preferences: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: {},
+      },
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE,
     },
@@ -61,6 +67,16 @@ export const initUserModel = (sequelize: Sequelize): typeof User => {
       sequelize,
       modelName: 'User',
       tableName: 'Users',
+      indexes: [
+        {
+          name: 'idx_user_email',
+          fields: ['email'],
+        },
+        {
+          name: 'idx_user_googleId',
+          fields: ['googleId'],
+        },
+      ],
     }
   );
 

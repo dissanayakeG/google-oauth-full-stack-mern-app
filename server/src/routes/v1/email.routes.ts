@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { EmailController } from "../../controllers/email.controller";
-import jwtAuth from "../../middlewares/jwt.auth";
 
 const router = Router();
 
 const emailController = new EmailController();
 
-router.get('/labels', jwtAuth, emailController.getGmailLabels);
-router.get('/emails', jwtAuth, emailController.getGmailEmails);
+router.get('/labels', emailController.getGmailLabels);
+router.get('/fetch', emailController.getGmailEmails);
+router.get('/list', emailController.listUserEmails);
+router.get('/:id', emailController.getEmailById);
 
 export default router;

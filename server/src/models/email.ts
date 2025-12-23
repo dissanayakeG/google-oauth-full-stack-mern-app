@@ -38,6 +38,24 @@ export const initEmailModel = (sequelize: Sequelize) => {
     }, {
         sequelize,
         tableName: 'Emails',
+        indexes: [
+            {
+                name: 'idx_email_userId_dateReceived',
+                fields: ['userId', 'dateReceived'],
+            },
+            {
+                name: 'idx_email_messageId',
+                fields: ['messageId'],
+            },
+            {
+                name: 'idx_email_isRead',
+                fields: ['isRead'],
+            },
+            {
+                name: 'idx_email_threadId',
+                fields: ['threadId'],
+            },
+        ],
     });
 
     return Email;

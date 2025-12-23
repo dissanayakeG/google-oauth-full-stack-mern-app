@@ -32,6 +32,9 @@ pnpm add pino pino-pretty pino-http
 
 #rate limit
 pnpm add express-rate-limit
+
+#mail
+pnpm add mailparser @types/mailparser
 ```
 
 ### run migrations

@@ -11,6 +11,7 @@ module.exports = {
       picture: Sequelize.STRING,
       googleId: { type: Sequelize.STRING, allowNull: true, unique: true },
       refreshToken: { type: Sequelize.TEXT, allowNull: true },
+      preferences: { type: Sequelize.JSON, allowNull: true },
       createdAt: Sequelize.DATE,
       updatedAt: Sequelize.DATE,
     });

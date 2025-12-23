@@ -1,6 +1,8 @@
 import { Sequelize } from "sequelize";
 import Environment from "./env.config";
 import { initUserModel } from '../models/user'
+import { initEmailModel } from '../models/email'
+import { initEmailBodyModel } from '../models/emailBody'
 import { logger } from "../utils/logger";
 
 const sequelize = new Sequelize(
@@ -27,6 +29,16 @@ export const connetDB = async () => {
     }
 }
 
+// Initialize models
 export const User = initUserModel(sequelize);
+export const Email = initEmailModel(sequelize);
+export const EmailBody = initEmailBodyModel(sequelize);
+
+// Set up associations
+const models = { User, Email, EmailBody };
+
+User.associate(models);
+Email.associate(models);
+EmailBody.associate(models);
 
 export default sequelize;
