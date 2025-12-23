@@ -9,6 +9,7 @@ import { ValidationError } from '../errors/ValidationError';
 import { InternalServerError } from '../errors/InternalServerError';
 import { ConfigError } from '../errors/ConfigError';
 import { UnauthorizedError } from '../errors/UnauthorizedError';
+import { logger } from '../utils/logger';
 
 
 export class OAuthService {
@@ -161,8 +162,8 @@ export class OAuthService {
     async fetchEmailsViaIMAP(accessToken: string, userEmail: string) {
         const { ImapFlow } = await import('imapflow');
 
-        console.log('IMAP: Connecting with email:', userEmail);
-        console.log('IMAP: Token length:', accessToken?.length);
+        logger.info(`IMAP: Connecting with email: ${userEmail}`);
+        logger.info(`IMAP: Token length: ${accessToken?.length}`);
 
         const client = new ImapFlow({
             host: 'imap.gmail.com',
@@ -173,10 +174,10 @@ export class OAuthService {
                 accessToken: accessToken,
             },
             logger: {
-                debug: (obj: any) => console.log('IMAP DEBUG:', obj),
-                info: (obj: any) => console.log('IMAP INFO:', obj),
-                warn: (obj: any) => console.warn('IMAP WARN:', obj),
-                error: (obj: any) => console.error('IMAP ERROR:', obj)
+                debug: (obj: any) => logger.debug('IMAP DEBUG:', obj),
+                info: (obj: any) => logger.info({obj},'IMAP INFO:'),
+                warn: (obj: any) => logger.warn({obj},'IMAP WARN:'),
+                error: (obj: any) => logger.error('IMAP ERROR:', obj)
             }
         });
 
@@ -186,13 +187,12 @@ export class OAuthService {
     async fetchEmails(client: ImapFlow) {
         // Connect
         await client.connect();
-        console.log('IMAP: Connected successfully');
-
+        logger.info('IMAP: Connected successfully');
         // Select INBOX
         let lock = await client.getMailboxLock('INBOX');
         try {
             const total = client.mailbox.exists;
-            console.log(`IMAP: INBOX has ${total} messages`);
+            logger.info(`IMAP: INBOX has ${total} messages`);
 
             const emails = [];
 
@@ -201,7 +201,7 @@ export class OAuthService {
                 const start = Math.max(1, total - 9);
                 const range = `${start}:${total}`;
 
-                console.log(`IMAP: Fetching messages ${range}`);
+                logger.info(`IMAP: Fetching messages ${range}`);
 
                 // Fetch latest 10 messages (or all if less than 10)
                 let messages = await client.fetchAll(range, {
@@ -211,7 +211,7 @@ export class OAuthService {
 
                 for (let message of messages) {
                     const seen = message.flags.has('\\Seen') ? '' : '[UNREAD] ';
-                    console.log(`${seen}${message.uid}: ${message.envelope.subject}`);
+                    logger.info(`${seen}${message.uid}: ${message.envelope.subject}`);
 
                     emails.push({
                         id: message.uid,
@@ -224,7 +224,7 @@ export class OAuthService {
                 }
             }
 
-            console.log(`IMAP: Fetched ${emails.length} messages`);
+            logger.info(`IMAP: Fetched ${emails.length} messages`);
 
             // Reverse to show newest first
             return emails.reverse();
@@ -232,7 +232,7 @@ export class OAuthService {
         } finally {
             lock.release();
             await client.logout();
-            console.log('IMAP: Logged out');
+            logger.info('IMAP: Logged out');
         }
     }
 

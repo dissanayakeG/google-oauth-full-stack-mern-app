@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../errors/AppError';
+import { logger } from '../utils/logger';
 
 export function globalErrorHandler(
   err: Error,
@@ -7,14 +8,19 @@ export function globalErrorHandler(
   res: Response,
   next: NextFunction
 ) {
-  console.error({
-    message: err.message,
-    stack: err.stack,
-    path: req.originalUrl,
-    method: req.method,
-  });
 
-  if (err instanceof AppError) {
+  const isAppError = err instanceof AppError;
+
+  logger.error(
+    {
+      err,
+      path: req.originalUrl,
+      method: req.method,
+    },
+    err.message
+  );
+
+  if (isAppError) {
     return res.status(err.statusCode).json({
       success: false,
       message: err.message,

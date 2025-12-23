@@ -6,8 +6,10 @@ import testRoutes from "./routes/v1/test";
 import { connetDB } from "./config/db/db.config";
 import session from "express-session";
 import cookieParser from 'cookie-parser';
-import { AppError } from "./errors/AppError";
 import { globalErrorHandler } from "./middlewares/globalErrorHandler";
+import { AppError } from "./errors/AppError";
+import { requestLogger } from "./middlewares/requestLogger";
+import { logger } from "./utils/logger";
 
 
 const app = express();
@@ -42,6 +44,11 @@ app.use(
 );
 app.use(cookieParser());
 
+// Logger middleware
+app.use(requestLogger);
+
+//All routes
+
 app.get("/", (req, res) => {
     res.send("Hello World!");
 });
@@ -62,8 +69,5 @@ app.use((req, res, next) => {
 // error handler LAST
 app.use(globalErrorHandler);
 
-connetDB().then(() => {
-    app.listen(Environment.PORT, () => {
-        console.log("Server started on port:" + `http://localhost:${Environment.PORT}`);
-    });
-})
+
+export default app;

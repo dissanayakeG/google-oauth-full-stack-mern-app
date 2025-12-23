@@ -26,6 +26,9 @@ pnpm init
 
 pnpm add express @types/express @types/node eslint prettier helmet cors @types/cors bcrypt @types/bcrypt jsonwebtoken @types/jsonwebtoken dotenv zod sequelize sequelize-cli mysql2 http-status-codes googleapis express-session @types/express-session 
 cookie-parser @types/cookie-parser imapflow @types/imapflow
+
+#logging using pino
+pnpm add pino pino-pretty pino-http
 ```
 
 ### run migrations
