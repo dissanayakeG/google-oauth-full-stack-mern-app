@@ -29,5 +29,4 @@ export const connetDB = async () => {
 
 export const User = initUserModel(sequelize);
 
-
 export default sequelize;

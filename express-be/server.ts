@@ -1,7 +1,7 @@
-import { connetDB } from './config/db/db.config';
-import Environment from './config/env.config';
-import app from './index';
-import { logger } from './utils/logger';
+import { connetDB } from './src/config/db/db.config';
+import Environment from './src/config/env.config';
+import app from './src/index';
+import { logger } from './src/utils/logger';
 
 
 async function bootstrap() {

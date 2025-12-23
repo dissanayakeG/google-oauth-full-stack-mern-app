@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response, Router } from "express";
 import { CreateUserDTO, createUserSchema } from "../dtos/user.dto";
-import { User } from "../models/user";
 import { TestService } from "../services/test.service";
 
 export class TestController {
@@ -12,6 +11,5 @@ export class TestController {
         const newUser = await this.testService.addUser(req.body);
 
         res.status(201).json({ message: 'User added', user: newUser });
-
     }
 }

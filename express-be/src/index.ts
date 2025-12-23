@@ -1,15 +1,12 @@
-import Environment from "./config/env.config";
 import express from "express";
 import cors from "cors";
 import oAuthRoutes from "./routes/v1/auth/routes";
 import testRoutes from "./routes/v1/test";
-import { connetDB } from "./config/db/db.config";
 import session from "express-session";
 import cookieParser from 'cookie-parser';
 import { globalErrorHandler } from "./middlewares/globalErrorHandler";
 import { AppError } from "./errors/AppError";
 import { requestLogger } from "./middlewares/requestLogger";
-import { logger } from "./utils/logger";
 
 
 const app = express();
