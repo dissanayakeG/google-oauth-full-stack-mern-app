@@ -21,7 +21,7 @@ export class User extends Model<
   declare readonly updatedAt: CreationOptional<Date>;
 
   static associate(models: any) {
-    // define associations here
+    User.hasMany(models.Email, { foreignKey: 'userId' });
   }
 }
 

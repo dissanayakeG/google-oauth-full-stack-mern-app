@@ -16,6 +16,9 @@ export default function jwtAuth(
   const authHeader = req.header('Authorization');
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
 
+  logger.info(`😀😀😀😀😀😀😀😀😀 ${token} ${authHeader}`);
+
+
   logger.info(`JWT middleware hit! ${token}`);
 
   if (!token) {

@@ -1,6 +1,8 @@
 import pino from "pino";
 import Environment from "../config/env.config";
 
+console.table(Environment);
+
 const isProduction = Environment.NODE_ENV === "production";
 
 export const logger = pino({

@@ -16,7 +16,7 @@ export default function Dashboard() {
 
             } catch (error) {
                 console.log('Auth bootstrap failed:', error);
-                window.location.href = '/login';
+                // window.location.href = '/login';
             }
         }
 
@@ -30,7 +30,7 @@ export default function Dashboard() {
 
     const handleFetchLabels = async () => {
         try {
-            const labelsRes = await api.get('/auth/gmail/labels');
+            const labelsRes = await api.get('/email/labels');
             setLabels(labelsRes.data.labels);
             console.log('Labels:', labelsRes.data.labels);
         } catch (error) {
@@ -40,7 +40,7 @@ export default function Dashboard() {
 
     const handleFetchEmails = async () => {
         try {
-            const emailsRes = await api.get('/auth/gmail/emails');
+            const emailsRes = await api.get('/email/emails');
             setEmails(emailsRes.data.emails);
             console.log('Emails:', emailsRes.data.emails);
         } catch (error) {

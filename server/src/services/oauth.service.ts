@@ -1,29 +1,20 @@
-import { google, Auth } from 'googleapis';
+import { google } from 'googleapis';
 import crypto from 'crypto';
 import Environment from '../config/env.config';
 import { CreateUserDTO } from '../dtos/user.dto';
 import { User } from '../models/user';
 import jwt from 'jsonwebtoken';
-import { ImapFlow } from 'imapflow';
 import { ValidationError } from '../errors/ValidationError';
-import { InternalServerError } from '../errors/InternalServerError';
 import { ConfigError } from '../errors/ConfigError';
 import { UnauthorizedError } from '../errors/UnauthorizedError';
-import { logger } from '../utils/logger';
-
+import { createOAuth2Client } from '../config/google.config';
+import { OAuthError } from '../errors/OAuthError';
+import { CSRFError } from '../errors/CSRFError';
 
 export class OAuthService {
-    private oauth2Client: Auth.OAuth2Client;
+    private oauth2Client = createOAuth2Client()
 
-    constructor() {
-        this.oauth2Client = new google.auth.OAuth2(
-            Environment.GOOGLE_CLIENT_ID,
-            Environment.GOOGLE_CLIENT_SECRET,
-            Environment.GOOGLE_REDIRECT_URL
-        );
-    }
-
-    generateAuthUrl(state: string): string {
+    generateAuthUrl = (state: string): string => {
         const scopes = [
             'https://mail.google.com/',
             'https://www.googleapis.com/auth/userinfo.email',
@@ -40,29 +31,55 @@ export class OAuthService {
         });
     }
 
-    async getGoogleUser(code: string) {
+    handleGoogleCallback = async (
+        code: string,
+        expectedState: string | undefined,
+        actualState: string | undefined) => {
+
+        if (!code) {
+            throw new OAuthError('Missing OAuth code');
+        }
+
+        if (expectedState !== actualState) {
+            throw new CSRFError();
+        }
+
         const { tokens } = await this.oauth2Client.getToken(code);
+
+        if (!tokens || !tokens.access_token) {
+            throw new OAuthError('Failed to retrieve OAuth tokens');
+        }
+
         this.oauth2Client.setCredentials(tokens);
 
         const oauth2 = google.oauth2('v2');
         const userInfo = await oauth2.userinfo.get({ auth: this.oauth2Client });
 
+        if (!userInfo.data.id || !userInfo.data.email || !userInfo.data.name) {
+            throw new OAuthError('Invalid Google user profile');
+        }
+
         return {
             tokens,
-            user: userInfo.data
+            googleUser: {
+                id: userInfo.data.id,
+                email: userInfo.data.email,
+                name: userInfo.data.name,
+                picture: userInfo.data.picture ?? undefined,
+            },
         };
     }
 
-    async createOrUpdateUser(userData: CreateUserDTO): Promise<User> {
-        if (!userData.id) {
-            throw new ValidationError("Google ID is required", []);
+    createOrUpdateUser = async (userData: CreateUserDTO): Promise<User> => {
+        if (!userData.id || !userData.email || !userData.name) {
+            throw new ValidationError('Invalid user data', []);
         }
 
         const [user, created] = await User.findOrCreate({
             where: { googleId: userData.id },
             defaults: {
                 id: crypto.randomUUID(),
-                email: userData.email || '',
+                email: userData.email,
                 name: userData.name || 'Unknown',
                 picture: userData.picture,
                 googleId: userData.id
@@ -80,31 +97,55 @@ export class OAuthService {
         return user;
     }
 
-    async findUserById(userId: string) {
+    refreshSession = async (refreshToken: string) => {
+
+        const decoded = await this.verifyRefreshToken(refreshToken);
+
+        if (typeof decoded !== 'object' || !decoded.userId) {
+            throw new UnauthorizedError('Invalid refresh token payload');
+        }
+
+        const user = await this.findUserByRefreshToken(refreshToken);
+
+        if (!user) {
+            throw new UnauthorizedError('Refresh token does not match any user');
+        }
+
+        // token rotation
+        await this.clearRefreshToken(decoded.userId);
+        const accessToken = await this.generateAccessToken(user);
+        const newRefreshToken = await this.generateRefreshToken(user);
+        await this.saveRefreshToken(user.id, newRefreshToken);
+
+        return { accessToken, newRefreshToken }
+    }
+
+    findUserById = async (userId: string) => {
         return User.findByPk(userId);
     }
 
-    async findUserByRefreshToken(refreshToken: string) {
+    findUserByRefreshToken = async (refreshToken: string) => {
         return User.findOne({ where: { refreshToken } });
     }
 
-    async saveRefreshToken(userId: string, refreshToken: string) {
+    saveRefreshToken = async (userId: string, refreshToken: string) => {
+
+        if (!userId || !refreshToken) {
+            throw new ValidationError('Invalid refresh token payload', []);
+        }
+
         await User.update({ refreshToken }, { where: { id: userId } });
     }
 
-    async clearRefreshToken(userId: string): Promise<void> {
-        try {
-            await User.update({ refreshToken: null }, { where: { id: userId } });
-        } catch (error) {
-            throw new InternalServerError('Failed to clear refresh token');
+    clearRefreshToken = async (userId: string): Promise<void> => {
+        if (!userId) {
+            throw new ValidationError('User ID is required', []);
         }
+
+        await User.update({ refreshToken: null }, { where: { id: userId } });
     }
 
-    async generateAccessToken(user: CreateUserDTO): Promise<string> {
-        if (!Environment.JWT_SECRET) {
-            throw new ConfigError('JWT_SECRET is not defined');
-        }
-
+    generateAccessToken = async (user: CreateUserDTO): Promise<string> => {
         const token = jwt.sign(
             { userId: user.id, email: user.email, name: user.name },
             Environment.JWT_SECRET as string,
@@ -114,11 +155,7 @@ export class OAuthService {
         return token;
     }
 
-    async generateRefreshToken(user: User): Promise<string> {
-        if (!Environment.REFRESH_TOKEN_SECRET) {
-            throw new ConfigError('REFRESH_TOKEN_SECRET is not defined');
-        }
-
+    generateRefreshToken = async (user: User): Promise<string> => {
         const token = jwt.sign(
             { userId: user.id, email: user.email, name: user.name },
             Environment.REFRESH_TOKEN_SECRET as string,
@@ -128,10 +165,7 @@ export class OAuthService {
         return token;
     }
 
-    async verifyRefreshToken(token: string) {
-        if (!Environment.REFRESH_TOKEN_SECRET) {
-            throw new ConfigError('REFRESH_TOKEN_SECRET is not defined');
-        }
+    verifyRefreshToken = async (token: string) => {
         try {
             return jwt.verify(token, Environment.REFRESH_TOKEN_SECRET);
         } catch {
@@ -139,101 +173,11 @@ export class OAuthService {
         }
     }
 
-    async verifyAccessToken(token: string) {
-        if (!Environment.JWT_SECRET) {
-            throw new ConfigError('JWT_SECRET is not defined');
-
-        }
+    verifyAccessToken = async (token: string) => {
         try {
             return jwt.verify(token, Environment.JWT_SECRET);
         } catch {
             throw new UnauthorizedError('Invalid or expired access token');
         }
     }
-
-    fetchGmailLabels(credentials: Auth.Credentials) {
-        this.oauth2Client.setCredentials(credentials);
-        const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
-
-        return gmail.users.labels.list({ userId: 'me' });
-    }
-
-
-    async fetchEmailsViaIMAP(accessToken: string, userEmail: string) {
-        const { ImapFlow } = await import('imapflow');
-
-        logger.info(`IMAP: Connecting with email: ${userEmail}`);
-        logger.info(`IMAP: Token length: ${accessToken?.length}`);
-
-        const client = new ImapFlow({
-            host: 'imap.gmail.com',
-            port: 993,
-            secure: true,
-            auth: {
-                user: userEmail,
-                accessToken: accessToken,
-            },
-            logger: {
-                debug: (obj: any) => logger.debug('IMAP DEBUG:', obj),
-                info: (obj: any) => logger.info({obj},'IMAP INFO:'),
-                warn: (obj: any) => logger.warn({obj},'IMAP WARN:'),
-                error: (obj: any) => logger.error('IMAP ERROR:', obj)
-            }
-        });
-
-        return await this.fetchEmails(client).catch(console.error);
-    }
-
-    async fetchEmails(client: ImapFlow) {
-        // Connect
-        await client.connect();
-        logger.info('IMAP: Connected successfully');
-        // Select INBOX
-        let lock = await client.getMailboxLock('INBOX');
-        try {
-            const total = client.mailbox.exists;
-            logger.info(`IMAP: INBOX has ${total} messages`);
-
-            const emails = [];
-
-            if (total > 0) {
-                // Calculate range for last 10 messages
-                const start = Math.max(1, total - 9);
-                const range = `${start}:${total}`;
-
-                logger.info(`IMAP: Fetching messages ${range}`);
-
-                // Fetch latest 10 messages (or all if less than 10)
-                let messages = await client.fetchAll(range, {
-                    envelope: true,
-                    flags: true
-                });
-
-                for (let message of messages) {
-                    const seen = message.flags.has('\\Seen') ? '' : '[UNREAD] ';
-                    logger.info(`${seen}${message.uid}: ${message.envelope.subject}`);
-
-                    emails.push({
-                        id: message.uid,
-                        subject: message.envelope.subject || '(No Subject)',
-                        from: message.envelope.from[0]?.address || 'Unknown',
-                        senderName: message.envelope.from[0]?.name || '',
-                        date: message.envelope.date,
-                        unseen: !message.flags.has('\\Seen')
-                    });
-                }
-            }
-
-            logger.info(`IMAP: Fetched ${emails.length} messages`);
-
-            // Reverse to show newest first
-            return emails.reverse();
-
-        } finally {
-            lock.release();
-            await client.logout();
-            logger.info('IMAP: Logged out');
-        }
-    }
-
 }

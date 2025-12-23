@@ -1,52 +1,47 @@
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
+import { z } from 'zod';
+// import { logger } from '../utils/logger';
+
 dotenv.config();
 
-type Environment = {
-    PORT: string;
-    FRONTEND_URL:string,
-    NODE_ENV: string,
+const envSchema = z.object({
+    PORT: z.string().min(1, "PORT is required"),
+    FRONTEND_URL: z.string().url("FRONTEND_URL must be a valid URL"),
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+    SESSION_SECRET: z.string().min(1, "SESSION_SECRET is required"),
 
-    //refresh and access token
-    JWT_SECRET: string,
-    REFRESH_TOKEN_SECRET: string,
-    ACCESS_TOKEN_EXPIRY: string,
-    REFRESH_TOKEN_EXPIRY: string,
-
-    // Database
-    DB_HOST: string,
-    DB_USER: string,
-    DB_PASSWORD: string,
-    DB_NAME: string,
-    DB_PORT: string,
-
-    // Google
-    GOOGLE_CLIENT_ID: string,
-    GOOGLE_CLIENT_SECRET: string,
-    GOOGLE_REDIRECT_URL: string,
-}
-
-const Environment :Environment  = {
-    PORT: process.env.PORT!,
-    FRONTEND_URL: process.env.FRONTEND_URL!,
-    NODE_ENV: process.env.NODE_ENV || 'development',
-
-    //refresh and access token
-    JWT_SECRET: process.env.JWT_SECRET!,
-    REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET!,
-    ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '15m',
-    REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY || '7d',
+    // Refresh and access token
+    JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
+    REFRESH_TOKEN_SECRET: z.string().min(1, "REFRESH_TOKEN_SECRET is required"),
+    ACCESS_TOKEN_EXPIRY: z.string().default('15m'),
+    REFRESH_TOKEN_EXPIRY: z.string().default('7d'),
 
     // Database
-    DB_HOST: process.env.DB_HOST!,
-    DB_USER: process.env.DB_USER!,
-    DB_PASSWORD: process.env.DB_PASSWORD!,
-    DB_NAME: process.env.DB_NAME!,
-    DB_PORT: process.env.DB_PORT!,
+    DB_HOST: z.string().min(1, "DB_HOST is required"),
+    DB_USER: z.string().min(1, "DB_USER is required"),
+    DB_PASSWORD: z.string().optional(), //Todo : add min later
+    DB_NAME: z.string().min(1, "DB_NAME is required"),
+    DB_PORT: z.string().min(1, "DB_PORT is required"),
 
     // Google
-    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID!,
-    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,
-    GOOGLE_REDIRECT_URL: process.env.GOOGLE_REDIRECT_URL!,
+    GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
+    GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
+    GOOGLE_REDIRECT_URL: z.string().url("GOOGLE_REDIRECT_URL must be a valid URL"),
+});
+
+const result = envSchema.safeParse(process.env);
+
+if (!result.success) {
+    result.error.issues.forEach(issue =>
+        console.error(` - ${issue.path.join('.')}: ${issue.message}`)
+    );
+    console.error("Environment configuration issue");
+    process.exit(1);
 }
+
+const Environment = result.data;
+console.table(Environment)
+
+export type EnvironmentType = z.infer<typeof envSchema>;
 
 export default Environment;
