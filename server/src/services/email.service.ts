@@ -25,7 +25,7 @@ export class EmailService {
         
         if (filters?.search) {
             const searchPattern = `%${filters.search}%`;
-            where[Op.or] = [
+            where[Op.or as any] = [
                 { subject: { [Op.like]: searchPattern } },
                 { sender: { [Op.like]: searchPattern } },
                 { snippet: { [Op.like]: searchPattern } }

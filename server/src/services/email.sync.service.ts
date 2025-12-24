@@ -5,6 +5,7 @@ import { createOAuth2Client } from '../config/google.config';
 import { User } from '../models/user';
 import ImapFlowClient from './support/imap';
 import { simpleParser, ParsedMail } from 'mailparser';
+import Environment from '../config/env.config';
 
 export class EmailSyncService {
     private oauth2Client = createOAuth2Client();
@@ -63,7 +64,7 @@ export class EmailSyncService {
                 userId: 'me',
                 requestBody: {
                     labelIds: ['INBOX'],
-                    topicName: 'projects/able-armor-482015-a8/topics/gmail-push'
+                    topicName: `projects/${Environment.GOOGLE_PUSH_NOTIFICATION_PROJECT_ID}/topics/${Environment.GOOGLE_PUSH_NOTIFICATION_TOPIC_NAME}`
                 }
             });
 
@@ -78,9 +79,12 @@ export class EmailSyncService {
 
     /**
      * Sync Gmail by push notifications or initial login
-     * call this method from EmailSyncController and startGmailWatch via OAuthController'scallback
+     * call this method from EmailSyncController (listen to push notifications)
+     * and startGmailWatch via OAuthController's callback
      */
     syncGmailHistory = async (emailAddress: string, newHistoryId: string) => {
+
+        // TODO : For now, consider user has one Gmail account
         const user = await User.findOne({ where: { email: emailAddress } });
 
         if (!user) {
@@ -187,14 +191,24 @@ export class EmailSyncService {
     /**
      * Fetch initial emails via IMAP
      */
-    private fetchInitialEmails = async (accessToken: string, userEmail: string, userId: string) => {
+    private fetchInitialEmails = async (
+        accessToken: string,
+        userEmail: string,
+        userId: string
+    ) => {
         logger.info({ userEmail }, 'Performing initial IMAP sync');
+
         const client = await ImapFlowClient(accessToken, userEmail);
+
         await client.connect();
 
         let lock = await client.getMailboxLock('INBOX');
+
         try {
+            if (!client.mailbox) return;
+
             const total = client.mailbox.exists;
+
             if (total > 0) {
                 const start = Math.max(1, total - 49);
                 const messages = await client.fetchAll(`${start}:${total}`, {
@@ -207,6 +221,7 @@ export class EmailSyncService {
                     if (!message.source) continue;
 
                     const parsed = await simpleParser(message.source);
+
                     await this.upsertEmail({
                         userId,
                         userEmail,

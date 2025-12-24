@@ -27,6 +27,9 @@ const envSchema = z.object({
     GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
     GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
     GOOGLE_REDIRECT_URL: z.string().url("GOOGLE_REDIRECT_URL must be a valid URL"),
+
+    GOOGLE_PUSH_NOTIFICATION_PROJECT_ID: z.string().min(1, "GOOGLE_PUSH_NOTIFICATION_PROJECT_ID is required"),
+    GOOGLE_PUSH_NOTIFICATION_TOPIC_NAME: z.string().min(1, "GOOGLE_PUSH_NOTIFICATION_TOPIC_NAME is required"),
 });
 
 const result = envSchema.safeParse(process.env);
