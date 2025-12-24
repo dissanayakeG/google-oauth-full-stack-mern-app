@@ -1,12 +1,8 @@
-import { logger } from '../utils/logger';
 import { createOAuth2Client } from '../config/google.config';
 import { Auth, google } from 'googleapis';
-import ImapFlowClient from './support/imap';
-import { simpleParser } from 'mailparser';
 import { Email } from '../models/email';
 import { EmailBody } from '../models/emailBody';
-import { Request } from 'express';
-import { User } from '../models/user';
+import { Op, WhereOptions } from 'sequelize';
 
 export class EmailService {
 
@@ -19,23 +15,57 @@ export class EmailService {
     }
 
     //get from db
-    async getUserEmails(userId: string, limit: number = 50, offset: number = 0) {
-        const emails = await Email.findAll({
-            where: { userId },
+    async getUserEmails(
+        userId: string, 
+        limit: number = 20, 
+        offset: number = 0, 
+        filters?: { search?: string; isRead?: boolean }
+    ) {        
+        const where: WhereOptions = { userId };
+        
+        if (filters?.search) {
+            const searchPattern = `%${filters.search}%`;
+            where[Op.or] = [
+                { subject: { [Op.like]: searchPattern } },
+                { sender: { [Op.like]: searchPattern } },
+                { snippet: { [Op.like]: searchPattern } }
+            ];
+        }
+        
+        if (filters?.isRead !== undefined) {
+            where.isRead = filters.isRead;
+        }
+
+        const { count, rows } = await Email.findAndCountAll({
+            where,
             attributes: ['id', 'subject', 'sender', 'snippet', 'isRead', 'dateReceived'],
             order: [['dateReceived', 'DESC']],
             limit,
-            offset
+            offset,
+            raw: true //faster queries without model instances
         });
 
-        return emails.map(email => ({
-            id: email.id,
-            subject: email.subject,
-            from: email.sender,
-            snippet: email.snippet,
-            date: email.dateReceived,
-            unseen: !email.isRead
-        }));
+        // return {
+        //     emails: rows,
+        //     pagination: {
+        //         total: count,
+        //         limit,
+        //         offset,
+        //         hasMore: count > offset + limit
+        //     }
+        // };
+
+        return {
+            emails: rows.map(email => ({
+                id: email.id,
+                subject: email.subject,
+                sender: email.sender,
+                snippet: email.snippet,
+                isRead: email.isRead,
+                dateReceived: email.dateReceived
+            })),
+            total: count
+        };
     }
 
     async getEmailBody(emailId: number, userId: string) {
