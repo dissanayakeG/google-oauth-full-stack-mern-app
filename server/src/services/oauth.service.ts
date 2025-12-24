@@ -29,7 +29,7 @@ export class OAuthService {
             scope: scopes,
             include_granted_scopes: true,
             state: state,
-            prompt: 'consent' // force consent to always get a refresh token during development
+            // prompt: 'consent' // force consent to always get a refresh token during development
         });
     }
 

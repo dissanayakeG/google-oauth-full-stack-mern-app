@@ -3,6 +3,7 @@
 ```bash
 pnpm create vite react-fe --template react-ts
 pnpm add axios react-router-dom
+pnpm add @tanstack/react-query lucide-react react-error-boundary
 ```
 
 ## run

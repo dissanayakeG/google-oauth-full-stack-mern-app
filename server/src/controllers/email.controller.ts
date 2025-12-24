@@ -52,14 +52,27 @@ export class EmailController {
     listUserEmails = async (req: Request, res: Response, next: NextFunction) => {
 
         const user = req.user as { userId: string };
-        const limit = parseInt(req.query.limit as string) || 50;
+        const limit = parseInt(req.query.limit as string) || 20;
         const offset = parseInt(req.query.offset as string) || 0;
+        const search = (req.query.search as string) || '';
+        const isRead = req.query.isRead as string;
 
         if (!user || !user.userId) {
             throw new UnauthorizedError();
         }
 
-        const emails = await this.emailService.getUserEmails(user.userId, limit, offset);
-        res.json({ emails, limit, offset });
+        const filters = {
+            search,
+            isRead: isRead ? isRead === 'true' : undefined,
+        };
+
+        const result = await this.emailService.getUserEmails(user.userId, limit, offset, filters);
+        res.json({
+            emails: result.emails,
+            limit,
+            offset,
+            total: result.total,
+            hasMore: offset + limit < result.total
+        });
     }
 }
