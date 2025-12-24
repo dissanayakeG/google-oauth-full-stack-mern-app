@@ -5,10 +5,12 @@ import Environment from "../config/env.config";
 import { GoogleCallbackRequestQueryDTO } from "../types/oauth.dto";
 import { logger } from "../utils/logger";
 import { UnauthorizedError } from "../errors/UnauthorizedError";
+import { EmailSyncService } from "../services/email.sync.service";
 
 export class OAuthController {
 
     private oAuthservice = new OAuthService();
+    private emailSyncService = new EmailSyncService();
 
     login = (req: Request, res: Response, next: NextFunction) => {
 
@@ -55,7 +57,7 @@ export class OAuthController {
 
         logger.info('step 1 : start fetch from initial callback oauth controller 😂😂😂😂😂😂');
 
-        this.oAuthservice.startGmailWatch(createdUser.email, tokens.access_token!);
+        this.emailSyncService.startGmailWatch(createdUser.email, tokens.access_token!);
 
         return res.redirect(`${Environment.FRONTEND_URL}/dashboard`);
     }

@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { EmailController } from "../controllers/email.controller";
+import { EmailSyncController } from "../controllers/email.sync.controller";
 
 const router = Router();
 
-const emailController = new EmailController();
+const emailSyncController = new EmailSyncController();
 
-router.post('/gmail/push', emailController.handleGmailPushNotification);
+router.post('/gmail/push', emailSyncController.handleGmailPushNotification);
 
 export default router;

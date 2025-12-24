@@ -1,6 +1,5 @@
 import { UnauthorizedError } from "../errors/UnauthorizedError";
 import { EmailService } from "../services/email.service";
-import { logger } from "../utils/logger";
 import { NextFunction, Request, Response } from "express";
 
 
@@ -25,6 +24,7 @@ export class EmailController {
         if (!credentials) {
             throw new UnauthorizedError('No OAuth2 credentials found');
         }
+        //todo : douche check this credintials, do i init googe oauth?
 
         const response = await this.emailService.fetchGmailLabels(credentials);
         const labels = response.data.labels || [];
@@ -32,10 +32,6 @@ export class EmailController {
         res.json({ labels });
     }
 
-
-    /**
-     * Get a single email with body by ID
-     */
     getEmailById = async (req: Request, res: Response, next: NextFunction) => {
 
         const user = req.user as { userId: string };
@@ -53,9 +49,6 @@ export class EmailController {
         res.json({ email });
     }
 
-    /**
-     * get all user emails from db
-     */
     listUserEmails = async (req: Request, res: Response, next: NextFunction) => {
 
         const user = req.user as { userId: string };
@@ -68,19 +61,5 @@ export class EmailController {
 
         const emails = await this.emailService.getUserEmails(user.userId, limit, offset);
         res.json({ emails, limit, offset });
-    }
-
-    /**
-     * listen to gmail push notifications and sync db
-     */
-    handleGmailPushNotification = (req: Request, res: Response, next: NextFunction) => {
-        res.sendStatus(204); // acknowledge immediately
-
-        const message = req.body.message?.data;
-        if (!message) return;
-
-        const decoded = JSON.parse(Buffer.from(message, 'base64').toString('utf8'));
-        console.log('step 5: handleGmailPushNotification 😈😈😈😈😈😈😈😈😈😈😈😈');
-        this.emailService.syncGmailHistory(decoded.emailAddress, decoded.historyId);
     }
 }

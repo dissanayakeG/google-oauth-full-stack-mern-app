@@ -5,13 +5,11 @@ import { CreateUserDTO } from '../dtos/user.dto';
 import { User } from '../models/user';
 import jwt from 'jsonwebtoken';
 import { ValidationError } from '../errors/ValidationError';
-import { ConfigError } from '../errors/ConfigError';
 import { UnauthorizedError } from '../errors/UnauthorizedError';
 import { createOAuth2Client } from '../config/google.config';
 import { OAuthError } from '../errors/OAuthError';
 import { CSRFError } from '../errors/CSRFError';
 import { EmailService } from './email.service';
-import { logger } from '../utils/logger';
 
 export class OAuthService {
     private oauth2Client = createOAuth2Client()
@@ -72,30 +70,6 @@ export class OAuthService {
                 picture: userInfo.data.picture ?? undefined,
             },
         };
-    }
-
-    startGmailWatch = async (userEmail: string, accessToken: string) => {
-
-        logger.info('step 2: startGmailWatch oauth service 😂😂😂😂😂😂');
-
-        const auth = new google.auth.OAuth2();
-        auth.setCredentials({ access_token: accessToken });
-
-        const gmail = google.gmail({ version: 'v1', auth });
-
-        const res = await gmail.users.watch({
-            userId: 'me',
-            requestBody: {
-                labelIds: ['INBOX'],
-                topicName: 'projects/able-armor-482015-a8/topics/gmail-push'
-            }
-        });
-
-        const user = await User.findOne({
-            where: { email: userEmail }
-        });
-
-        await this.emailService.syncGmailHistory(userEmail, res.data.historyId);
     }
 
     createOrUpdateUser = async (userData: CreateUserDTO): Promise<User> => {
