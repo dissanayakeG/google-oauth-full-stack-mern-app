@@ -2,8 +2,7 @@ import { createOAuth2Client } from '../config/google.config';
 import { Auth, google } from 'googleapis';
 import { Email } from '../models/email';
 import { EmailBody } from '../models/emailBody';
-import { Op, fn, col, WhereOptions } from 'sequelize';
-import sequelize from '../config/db.config';
+import { Op, WhereOptions } from 'sequelize';
 
 export class EmailService {
 
@@ -21,10 +20,7 @@ export class EmailService {
         limit: number = 20, 
         offset: number = 0, 
         filters?: { search?: string; isRead?: boolean }
-    ) {
-        // const { Op } = require('sequelize');
-        // const sequelize = require('sequelize');
-        
+    ) {        
         const where: WhereOptions = { userId };
         
         if (filters?.search) {
