@@ -17,7 +17,10 @@ export class User extends Model<
   declare picture?: string;
   declare googleId?: string;
   declare refreshToken?: string | null;
+  declare googleRefreshToken?: string | null;
+  declare googleAccessToken?: string | null;
   declare preferences?: object | null;
+  declare gmailHistoryId?: string | null
   declare readonly createdAt: CreationOptional<Date>;
   declare readonly updatedAt: CreationOptional<Date>;
 
@@ -55,10 +58,23 @@ export const initUserModel = (sequelize: Sequelize): typeof User => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      googleRefreshToken: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      googleAccessToken: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       preferences: {
         type: DataTypes.JSON,
         allowNull: true,
         defaultValue: {},
+      },
+      gmailHistoryId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
       },
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE,

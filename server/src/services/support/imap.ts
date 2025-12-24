@@ -10,12 +10,12 @@ const ImapFlowClient = async (accessToken: string, userEmail: string) => {
             user: userEmail,
             accessToken: accessToken,
         },
-        logger: {
-            debug: (obj: any) => logger.debug('IMAP DEBUG:', obj),
-            info: (obj: any) => logger.info({ obj }, 'IMAP INFO:'),
-            warn: (obj: any) => logger.warn({ obj }, 'IMAP WARN:'),
-            error: (obj: any) => logger.error('IMAP ERROR:', obj)
-        }
+        // logger: {
+        //     debug: (obj: any) => logger.debug('IMAP DEBUG:', obj),
+        //     info: (obj: any) => logger.info({ obj }, 'IMAP INFO:'),
+        //     warn: (obj: any) => logger.warn({ obj }, 'IMAP WARN:'),
+        //     error: (obj: any) => logger.error('IMAP ERROR:', obj)
+        // }
     });
 
     return client;

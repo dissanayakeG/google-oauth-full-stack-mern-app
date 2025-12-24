@@ -1,62 +1,20 @@
-import Environment from "./config/env.config";
-import express from "express";
-import cors from "cors";
-import routerV1 from "./routes/v1";
-import session from "express-session";
-import cookieParser from 'cookie-parser';
-import { globalErrorHandler } from "./middlewares/globalErrorHandler";
-import { AppError } from "./errors/AppError";
-import { requestLogger } from "./middlewares/requestLogger";
-import rateLimiter from "./middlewares/rateLimiter";
-import commonRoutes from "./routes/common.routes";
+import Environment from './config/env.config';
+import { connetDB } from './config/db.config';
+import app from './app';
+import { logger } from './utils/logger';
 
-const app = express();
+async function bootstrap() {
+    try {
+        await connetDB();
 
-//these two required to access the req.body
-app.use(express.json());
+        app.listen(Environment.PORT, () => {
+            logger.info("Server started on port:" + `http://localhost:${Environment.PORT}`);
+        });
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Access-Control-Allow-Credentials',
-    'X-CSRF-Token'
-  ],
-}));
+    } catch (error) {
+        logger.fatal({ error }, "Failed to start server:");
+        process.exit(1);
+    }
+}
 
-app.use(
-  session({
-    secret: Environment.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      secure: false,      // use true HTTPS
-      httpOnly: true,
-      sameSite: 'lax',    // this allows redirects from Google to preserve the cookie
-    },
-  })
-);
-
-app.use(cookieParser());
-
-// Logger middleware
-app.use(requestLogger);
-
-// Routes
-app.use(commonRoutes)
-
-//TODO : add shlow down middleware
-app.use('/api/v1', rateLimiter, routerV1);
-
-// Runs only if no route matched
-app.use((req, res, next) => {
-  next(new AppError(`Route ${req.originalUrl} not found`, 404));
-});
-
-// Global error handler
-app.use(globalErrorHandler);
-
-export default app;
+bootstrap();

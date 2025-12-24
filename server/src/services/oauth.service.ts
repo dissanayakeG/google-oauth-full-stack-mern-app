@@ -10,9 +10,13 @@ import { UnauthorizedError } from '../errors/UnauthorizedError';
 import { createOAuth2Client } from '../config/google.config';
 import { OAuthError } from '../errors/OAuthError';
 import { CSRFError } from '../errors/CSRFError';
+import { EmailService } from './email.service';
+import { logger } from '../utils/logger';
 
 export class OAuthService {
     private oauth2Client = createOAuth2Client()
+    private emailService = new EmailService();
+
 
     generateAuthUrl = (state: string): string => {
         const scopes = [
@@ -27,7 +31,7 @@ export class OAuthService {
             scope: scopes,
             include_granted_scopes: true,
             state: state,
-            //prompt: 'consent' //this will ask to select an account each time
+            prompt: 'consent' // force consent to always get a refresh token during development
         });
     }
 
@@ -70,6 +74,30 @@ export class OAuthService {
         };
     }
 
+    startGmailWatch = async (userEmail: string, accessToken: string) => {
+
+        logger.info('step 2: startGmailWatch oauth service 😂😂😂😂😂😂');
+
+        const auth = new google.auth.OAuth2();
+        auth.setCredentials({ access_token: accessToken });
+
+        const gmail = google.gmail({ version: 'v1', auth });
+
+        const res = await gmail.users.watch({
+            userId: 'me',
+            requestBody: {
+                labelIds: ['INBOX'],
+                topicName: 'projects/able-armor-482015-a8/topics/gmail-push'
+            }
+        });
+
+        const user = await User.findOne({
+            where: { email: userEmail }
+        });
+
+        await this.emailService.syncGmailHistory(userEmail, res.data.historyId);
+    }
+
     createOrUpdateUser = async (userData: CreateUserDTO): Promise<User> => {
         if (!userData.id || !userData.email || !userData.name) {
             throw new ValidationError('Invalid user data', []);
@@ -82,16 +110,36 @@ export class OAuthService {
                 email: userData.email,
                 name: userData.name || 'Unknown',
                 picture: userData.picture,
-                googleId: userData.id
+                googleId: userData.id,
+                googleAccessToken: (userData as any).googleAccessToken,
+                googleRefreshToken: (userData as any).googleRefreshToken
             }
         });
+
+        let needsSave = false;
+
+        // Update tokens if they are provided and different
+        if ((userData as any).googleAccessToken && (userData as any).googleAccessToken !== user.googleAccessToken) {
+            user.googleAccessToken = (userData as any).googleAccessToken;
+            needsSave = true;
+        }
+
+        // Note: Google only sends refresh_token on first login or if prompt=consent
+        if ((userData as any).googleRefreshToken && (userData as any).googleRefreshToken !== user.googleRefreshToken) {
+            user.googleRefreshToken = (userData as any).googleRefreshToken;
+            needsSave = true;
+        }
 
         if (!created) {
             if (userData.picture !== user.picture || userData.name !== user.name) {
                 user.name = userData.name || user.name;
                 user.picture = userData.picture || user.picture;
-                await user.save();
+                needsSave = true;
             }
+        }
+
+        if (needsSave) {
+            await user.save();
         }
 
         return user;

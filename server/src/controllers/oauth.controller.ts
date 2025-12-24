@@ -26,13 +26,16 @@ export class OAuthController {
         const { code, error, state } = req.query;
 
         if (error) {
-            logger.error(`OAuth callback error ${error}`);
             return res.redirect(`${Environment.FRONTEND_URL}/?auth=failed&error=${encodeURIComponent(error)}`);
         }
 
         const { tokens, googleUser } = await this.oAuthservice.handleGoogleCallback(code, req.session?.state, state);
 
-        const createdUser = await this.oAuthservice.createOrUpdateUser(googleUser);
+        const createdUser = await this.oAuthservice.createOrUpdateUser({
+            ...googleUser,
+            googleAccessToken: tokens.access_token,
+            googleRefreshToken: tokens.refresh_token
+        } as any);
 
         // Generate a Refresh Token
         const refreshToken = await this.oAuthservice.generateRefreshToken(createdUser);
@@ -50,6 +53,10 @@ export class OAuthController {
         req.session.credentials = tokens;
         req.session.userId = createdUser.id;
 
+        logger.info('step 1 : start fetch from initial callback oauth controller 😂😂😂😂😂😂');
+
+        this.oAuthservice.startGmailWatch(createdUser.email, tokens.access_token!);
+
         return res.redirect(`${Environment.FRONTEND_URL}/dashboard`);
     }
 
@@ -61,8 +68,6 @@ export class OAuthController {
         }
 
         const { accessToken, newRefreshToken } = await this.oAuthservice.refreshSession(refreshToken);
-
-        logger.info({ accessToken, newRefreshToken }, "MY TOKENS");
 
         res.cookie('refreshToken', newRefreshToken, {
             httpOnly: true,

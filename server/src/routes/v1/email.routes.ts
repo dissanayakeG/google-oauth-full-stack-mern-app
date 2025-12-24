@@ -6,7 +6,7 @@ const router = Router();
 const emailController = new EmailController();
 
 router.get('/labels', emailController.getGmailLabels);
-router.get('/fetch', emailController.getGmailEmails);
+// router.get('/fetch', emailController.getGmailEmails);
 router.get('/list', emailController.listUserEmails);
 router.get('/:id', emailController.getEmailById);
 

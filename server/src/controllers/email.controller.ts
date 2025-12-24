@@ -9,7 +9,6 @@ export class EmailController {
     private emailService = new EmailService();
 
     getGmailLabels = async (req: Request, res: Response, next: NextFunction) => {
-        logger.info('getGmailLabels hit!');
 
         const user = req.user;
 
@@ -30,27 +29,7 @@ export class EmailController {
         const response = await this.emailService.fetchGmailLabels(credentials);
         const labels = response.data.labels || [];
 
-        logger.info('Gmail labels fetched successfully');
-
         res.json({ labels });
-    }
-
-    getGmailEmails = async (req: Request, res: Response, next: NextFunction) => {
-
-        const user = req.user as { userId: string; email: string };
-
-        if (!user || !user.email) {
-            throw new UnauthorizedError('No OAuth2 credentials found');
-        }
-
-        const googleAccessToken = req.session?.credentials?.access_token;
-
-        if (!googleAccessToken) {
-            throw new UnauthorizedError('No Google OAuth access token found in session');
-        }
-
-        const emails = await this.emailService.fetchGmailEmails(googleAccessToken, user.email, user.userId);
-        res.json({ emails });
     }
 
 
@@ -89,5 +68,19 @@ export class EmailController {
 
         const emails = await this.emailService.getUserEmails(user.userId, limit, offset);
         res.json({ emails, limit, offset });
+    }
+
+    /**
+     * listen to gmail push notifications and sync db
+     */
+    handleGmailPushNotification = (req: Request, res: Response, next: NextFunction) => {
+        res.sendStatus(204); // acknowledge immediately
+
+        const message = req.body.message?.data;
+        if (!message) return;
+
+        const decoded = JSON.parse(Buffer.from(message, 'base64').toString('utf8'));
+        console.log('step 5: handleGmailPushNotification 😈😈😈😈😈😈😈😈😈😈😈😈');
+        this.emailService.syncGmailHistory(decoded.emailAddress, decoded.historyId);
     }
 }
