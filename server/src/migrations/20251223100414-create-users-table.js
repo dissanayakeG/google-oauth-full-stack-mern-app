@@ -11,6 +11,10 @@ module.exports = {
       picture: Sequelize.STRING,
       googleId: { type: Sequelize.STRING, allowNull: true, unique: true },
       refreshToken: { type: Sequelize.TEXT, allowNull: true },
+      googleRefreshToken: { type: Sequelize.TEXT, allowNull: true },
+      googleAccessToken: { type: Sequelize.TEXT, allowNull: true },
+      preferences: { type: Sequelize.JSON, allowNull: true },
+      gmailHistoryId: {type: Sequelize.STRING, allowNull: true, unique: true},
       createdAt: Sequelize.DATE,
       updatedAt: Sequelize.DATE,
     });
