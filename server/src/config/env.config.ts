@@ -19,7 +19,7 @@ const envSchema = z.object({
     // Database
     DB_HOST: z.string().min(1, "DB_HOST is required"),
     DB_USER: z.string().min(1, "DB_USER is required"),
-    DB_PASSWORD: z.string().optional(), //Todo : add min later
+    DB_PASSWORD: z.string().optional(), //Todo : add min later, this is for dev purpose
     DB_NAME: z.string().min(1, "DB_NAME is required"),
     DB_PORT: z.string().min(1, "DB_PORT is required"),
 

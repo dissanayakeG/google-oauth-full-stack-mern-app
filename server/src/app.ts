@@ -7,19 +7,16 @@ import { globalErrorHandler } from "./middlewares/globalErrorHandler";
 import { AppError } from "./errors/AppError";
 import { requestLogger } from "./middlewares/requestLogger";
 import rateLimiter from "./middlewares/rateLimiter";
-// import commonRoutes from "./routes/common.routes";
-// import emailNotificationRoutes from "./routes/email.notification.routes";
 import routerV1 from "./routes/v1";
 import router from "./routes";
 
-
 const app = express();
 
-//these two required to access the req.body
-app.use(express.json());
+app.use(express.json()); // to parse application/json, otherwise req.body will be undefined
 
+// Required for cross-origin browser requests
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: Environment.FRONTEND_URL,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
@@ -36,9 +33,9 @@ app.use(
     resave: false,
     saveUninitialized: true,
     cookie: {
-      secure: false,      // use true HTTPS
+      secure: Environment.NODE_ENV === 'production',
       httpOnly: true,
-      sameSite: 'lax',    // this allows redirects from Google to preserve the cookie
+      sameSite: 'lax',
     },
   })
 );
@@ -50,9 +47,6 @@ app.use(requestLogger);
 
 // Routes
 app.use(router)
-
-//hanlde gmail push notification
-// app.use('/api', emailNotificationRoutes);
 
 //TODO : add shlow down middleware
 app.use('/api/v1', rateLimiter, routerV1);

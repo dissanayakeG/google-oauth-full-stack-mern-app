@@ -55,8 +55,8 @@ export class OAuthController {
         req.session.credentials = tokens;
         req.session.userId = createdUser.id;
 
-        logger.info('step 1 : start fetch from initial callback oauth controller 😂😂😂😂😂😂');
-
+        logger.info('Start fetch from initial callback');
+        //TODO: this should happen only in first login   
         this.emailSyncService.startGmailWatch(createdUser.email, tokens.access_token!);
 
         return res.redirect(`${Environment.FRONTEND_URL}/dashboard`);
