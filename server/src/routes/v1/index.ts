@@ -1,7 +1,7 @@
 import { Router } from "express";
 import oAuthRoutes from "./auth.routes";
 import emailRoutes from "./email.routes";
-import jwtAuth from "../../middlewares/jwt.auth";
+import jwtAuth from "../../middlewares/auth.middleware";
 
 const routerV1 = Router();
 

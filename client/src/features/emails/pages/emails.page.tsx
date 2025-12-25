@@ -1,43 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
 import { ErrorBoundary } from "react-error-boundary";
 import { LogOut, Mail, Loader2, ChevronRight } from "lucide-react";
-import { useAuth } from "../providers/AuthContext";
-import api from "../api";
-import { MainErrorFallback } from "../components/ErrorBoundary";
-import { useState, useEffect } from "react";
+import { useAuth } from "../../../providers/auth-context";
+import { MainErrorFallback } from "../../../components/app/app-error-boundary";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useEmails } from "../hooks/use-emails-hook";
+import { useDebouncedSearch } from "../../../hooks/use-debounced-search";
 
-const fetchEmails = async (offset: number, limit: number, search: string = '') => {
-    const { data } = await api.get('/email/list', {
-        params: { offset, limit, search }
-    });
-    return data;
-};
 
-export default function Dashboard() {
+export default function EmailsPage() {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
+    const { value: search, debouncedValue: debouncedSearch, onChange } = useDebouncedSearch('');
     const [offset, setOffset] = useState(0);
-    const [search, setSearch] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
     const limit = 5;
-
-    // Debounce search input
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-            setOffset(0);
-        }, 300);
-
-        return () => clearTimeout(timer);
-    }, [search]);
-
-    const { data, isLoading, isError, error, refetch } = useQuery({
-        queryKey: ["emails", offset, limit, debouncedSearch],
-        queryFn: () => fetchEmails(offset, limit, debouncedSearch),
-    });
-
-    const handleSearchEmails = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSearch(event.target.value);
-    }
+    const { data, isLoading, refetch } = useEmails({ offset, limit, search: debouncedSearch });
 
     const handleNextPage = () => {
         if (data?.hasMore) {
@@ -51,9 +28,19 @@ export default function Dashboard() {
         }
     }
 
+    const handleFetchEmail = (emailId: string) => {
+        const url = `/email/${emailId}`;
+        navigate(url);
+    }
+
+    const formatSenderName = (sender: string) => {
+        const match = sender.match(/^"?([^"<]+)"?\s*(?:<.+>)?$/);
+        return match ? match[1].trim() : sender.replace(/[<>]/g, '');
+    }
+
     return (
         <div className="min-h-screen bg-[#f8f9fa]">
-            <header className="bg-white border-b sticky top-0 z-10">
+            <section className="bg-white border-b sticky top-0 z-10">
                 <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-blue-600 font-bold text-xl">
                         <div className="bg-blue-600 text-white p-1 rounded">
@@ -76,20 +63,20 @@ export default function Dashboard() {
                         </button>
                     </div>
                 </div>
-            </header>
+            </section>
 
             <section className="bg-white shadow-sm border-b">
                 <div className="max-w-6xl mx-auto p-4 md:p-8">
-                   <input 
-                       className="w-full border border-gray-300 text-gray-500 rounded-md p-2" 
-                       placeholder="Search emails..." 
-                       value={search}
-                       onChange={handleSearchEmails}
-                   />
+                    <input
+                        className="w-full border border-gray-300 text-gray-500 rounded-md p-2"
+                        placeholder="Search emails..."
+                        value={search}
+                        onChange={(e) => onChange(e.target.value)}
+                    />
                 </div>
             </section>
 
-            <main className="max-w-6xl mx-auto p-4 md:p-8 min-h-[60vh]">
+            <section className="max-w-6xl mx-auto p-4 md:p-8 min-h-[60vh]">
                 <div className="mb-6 flex justify-between items-end">
                     <h2 className="text-2xl font-semibold text-gray-800">Inbox</h2>
                     <span className="text-sm text-gray-500">{data?.emails?.length || 0} messages</span>
@@ -115,20 +102,21 @@ export default function Dashboard() {
                                             <div
                                                 key={email.id}
                                                 className="flex items-center gap-4 p-4 hover:bg-blue-50/50 cursor-pointer transition-all group"
+                                                onClick={() => handleFetchEmail(email.id)}
                                             >
                                                 <div className={`w-2 h-2 rounded-full ${!email.isRead ? 'bg-blue-600' : 'bg-transparent'}`} />
 
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-baseline">
                                                         <span className={`text-sm ${!email.isRead ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
-                                                            {email.sender}
+                                                            {formatSenderName(email.sender)}
                                                         </span>
                                                         <span className="text-xs text-gray-400 uppercase">
                                                             {new Date(email.dateReceived).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                                         </span>
                                                     </div>
 
-                                                    <p className={`text-sm truncate ${!email.isRead ? 'font-semibold text-gray-800' : 'text-gray-600'}`}>
+                                                    <p className={`text-sm truncate font-bold ${!email.isRead ? 'text-blue-800' : 'text-gray-800'}`}>
                                                         {email.subject}
                                                     </p>
 
@@ -167,7 +155,7 @@ export default function Dashboard() {
                         </>
                     )}
                 </ErrorBoundary>
-            </main>
+            </section>
         </div>
     );
 }

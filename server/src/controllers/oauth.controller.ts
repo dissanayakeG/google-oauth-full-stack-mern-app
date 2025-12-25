@@ -59,7 +59,7 @@ export class OAuthController {
         //TODO: this should happen only in first login   
         this.emailSyncService.startGmailWatch(createdUser.email, tokens.access_token!);
 
-        return res.redirect(`${Environment.FRONTEND_URL}/dashboard`);
+        return res.redirect(`${Environment.FRONTEND_URL}/emails`);
     }
 
     refresh = async (req: Request, res: Response) => {

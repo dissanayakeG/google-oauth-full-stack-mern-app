@@ -3,6 +3,7 @@ client/.env
 
 server/node_modules/
 server/.env
+server/logs/
 
 .DS_Store
 .vscode/

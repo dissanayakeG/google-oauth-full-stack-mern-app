@@ -1,6 +1,6 @@
 
 import googleLogo from '/assets/google-logo.png';
-export default function Login() {
+export default function LoginPage() {
 
     const handleLogin = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault();

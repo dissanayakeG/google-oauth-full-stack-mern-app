@@ -3,10 +3,10 @@ import express from "express";
 import cors from "cors";
 import session from "express-session";
 import cookieParser from 'cookie-parser';
-import { globalErrorHandler } from "./middlewares/globalErrorHandler";
+import globalErrorHandler from "./middlewares/error.middleware";
 import { AppError } from "./errors/AppError";
-import { requestLogger } from "./middlewares/requestLogger";
-import rateLimiter from "./middlewares/rateLimiter";
+import { requestLogger } from "./middlewares/logger.middleware";
+import rateLimiter from "./middlewares/rate-limiter.middleware";
 import routerV1 from "./routes/v1";
 import router from "./routes";
 

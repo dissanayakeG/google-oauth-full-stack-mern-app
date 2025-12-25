@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { OAuthController } from "../../controllers/oauth.controller";
-import jwtAuth from "../../middlewares/jwt.auth";
+import jwtAuth from "../../middlewares/auth.middleware";
 
 const oAuthRoutes = Router();
 

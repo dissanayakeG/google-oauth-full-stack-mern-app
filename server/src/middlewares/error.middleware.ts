@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../errors/AppError';
 import { logger } from '../utils/logger';
 
-export function globalErrorHandler(
+export default function globalErrorHandler(
   err: Error,
   req: Request,
   res: Response,

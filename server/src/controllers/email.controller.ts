@@ -1,6 +1,8 @@
+import { stat } from "fs";
 import { UnauthorizedError } from "../errors/UnauthorizedError";
 import { EmailService } from "../services/email.service";
 import { NextFunction, Request, Response } from "express";
+import { logger } from "../utils/logger";
 
 
 export class EmailController {
@@ -46,7 +48,32 @@ export class EmailController {
         }
 
         const email = await this.emailService.getEmailBody(emailId, user.userId);
-        res.json({ email });
+
+        if (!email) {
+            return res.json({ status: 404, message: 'Email not found' });
+        }
+
+        const updatedEmail = await this.emailService.markEmailAsRead(email.id);
+
+        if (!updatedEmail) {
+            return res.json({ status: 404, message: 'Email not found' });
+        }
+
+        const emailResponse = {
+            id: updatedEmail.id,
+            subject: updatedEmail.subject,
+            sender: updatedEmail.sender,
+            recipient: updatedEmail.recipient,
+            date: updatedEmail.dateReceived,
+            isRead: updatedEmail.isRead,
+            body: {
+                html: updatedEmail.body?.html || '',
+                text: updatedEmail.body?.text || ''
+            }
+        };
+        //associate defined in model as body
+
+        return res.json({ data: emailResponse });
     }
 
     listUserEmails = async (req: Request, res: Response, next: NextFunction) => {

@@ -16,13 +16,13 @@ export class EmailService {
 
     //get from db
     async getUserEmails(
-        userId: string, 
-        limit: number = 20, 
-        offset: number = 0, 
+        userId: string,
+        limit: number = 20,
+        offset: number = 0,
         filters?: { search?: string; isRead?: boolean }
-    ) {        
+    ) {
         const where: WhereOptions = { userId };
-        
+
         if (filters?.search) {
             const searchPattern = `%${filters.search}%`;
             where[Op.or as any] = [
@@ -31,7 +31,7 @@ export class EmailService {
                 { snippet: { [Op.like]: searchPattern } }
             ];
         }
-        
+
         if (filters?.isRead !== undefined) {
             where.isRead = filters.isRead;
         }
@@ -78,27 +78,21 @@ export class EmailService {
             }]
         }) as (Email & { body?: EmailBody }) | null;
 
-        if (!email) {
-            throw new Error('Email not found');
-        }
-
-        // Mark as read
-        if (!email.isRead) {
-            await email.update({ isRead: true });
-        }
-
-        return {
-            id: email.id,
-            subject: email.subject,
-            sender: email.sender,
-            recipient: email.recipient,
-            date: email.dateReceived,
-            isRead: email.isRead,
-            body: {
-                html: email.body?.html || '',
-                text: email.body?.text || ''
-            }
-        };
+        return email;
     }
 
+    async markEmailAsRead(emailId: number) {
+
+        await Email.update(
+            { isRead: true },
+            { where: { id: emailId } }
+        );
+
+        return await Email.findByPk(emailId, {
+            include: [{
+                model: EmailBody,
+                as: 'body'
+            }]
+        });
+    }
 }

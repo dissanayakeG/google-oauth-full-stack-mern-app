@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from "react";
-import type { AuthContextType } from "../types/auth.context";
-import type { User } from "../types/user";
+import type { AuthContextType } from "../types/auth-context-type";
+import type { User } from "../types/user-type";
 import api, { setApiToken } from "../api";
 
 export const AuthContext = createContext<AuthContextType | null>(null);

@@ -1,14 +1,14 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
-// import { logger } from '../utils/logger';
 
 dotenv.config();
 
 const envSchema = z.object({
-    PORT: z.string().min(1, "PORT is required"),
+    PORT: z.coerce.number().int().positive("PORT must be a positive number"),
     FRONTEND_URL: z.string().url("FRONTEND_URL must be a valid URL"),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     SESSION_SECRET: z.string().min(1, "SESSION_SECRET is required"),
+    RATE_LIMITER_MAX_REQUESTS: z.coerce.number().int().positive("RATE_LIMITER_MAX_REQUESTS must be a positive number"),
 
     // Refresh and access token
     JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
@@ -21,7 +21,7 @@ const envSchema = z.object({
     DB_USER: z.string().min(1, "DB_USER is required"),
     DB_PASSWORD: z.string().optional(), //Todo : add min later, this is for dev purpose
     DB_NAME: z.string().min(1, "DB_NAME is required"),
-    DB_PORT: z.string().min(1, "DB_PORT is required"),
+    DB_PORT: z.coerce.number().int().positive("DB_PORT must be a positive number"),
 
     // Google
     GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
@@ -43,7 +43,6 @@ if (!result.success) {
 }
 
 const Environment = result.data;
-console.table(Environment)
 
 export type EnvironmentType = z.infer<typeof envSchema>;
 
