@@ -8,13 +8,3 @@ export const createOAuth2Client = () => {
         Environment.GOOGLE_REDIRECT_URL
     );
 };
-
-export const getAuthenticatedClient = (tokens: any) => {
-    const client = createOAuth2Client();
-    client.setCredentials(tokens);
-    return client;
-};
-
-export const getGmailClient = (auth: any) => {
-    return google.gmail({ version: 'v1', auth });
-};

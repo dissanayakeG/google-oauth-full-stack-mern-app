@@ -9,11 +9,9 @@ import { UnauthorizedError } from '../errors/UnauthorizedError';
 import { createOAuth2Client } from '../config/google.config';
 import { OAuthError } from '../errors/OAuthError';
 import { CSRFError } from '../errors/CSRFError';
-import { EmailService } from './email.service';
 
 export class OAuthService {
     private oauth2Client = createOAuth2Client()
-    private emailService = new EmailService();
 
 
     generateAuthUrl = (state: string): string => {
@@ -29,7 +27,7 @@ export class OAuthService {
             scope: scopes,
             include_granted_scopes: true,
             state: state,
-            // prompt: 'consent' // force consent to always get a refresh token during development
+            prompt: 'consent' // force consent to always get a refresh token during development
         });
     }
 

@@ -1,15 +1,16 @@
 import Environment from "./config/env.config";
 import express from "express";
 import cors from "cors";
-import routerV1 from "./routes/v1";
 import session from "express-session";
 import cookieParser from 'cookie-parser';
 import { globalErrorHandler } from "./middlewares/globalErrorHandler";
 import { AppError } from "./errors/AppError";
 import { requestLogger } from "./middlewares/requestLogger";
 import rateLimiter from "./middlewares/rateLimiter";
-import commonRoutes from "./routes/common.routes";
-import emailNotificationRoutes from "./routes/email.notification.routes";
+// import commonRoutes from "./routes/common.routes";
+// import emailNotificationRoutes from "./routes/email.notification.routes";
+import routerV1 from "./routes/v1";
+import router from "./routes";
 
 
 const app = express();
@@ -48,10 +49,10 @@ app.use(cookieParser());
 app.use(requestLogger);
 
 // Routes
-app.use(commonRoutes)
+app.use(router)
 
 //hanlde gmail push notification
-app.use('/api', emailNotificationRoutes);
+// app.use('/api', emailNotificationRoutes);
 
 //TODO : add shlow down middleware
 app.use('/api/v1', rateLimiter, routerV1);

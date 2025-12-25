@@ -5,7 +5,7 @@ import Environment from "../config/env.config";
 import { GoogleCallbackRequestQueryDTO } from "../types/oauth.dto";
 import { logger } from "../utils/logger";
 import { UnauthorizedError } from "../errors/UnauthorizedError";
-import { EmailSyncService } from "../services/email.sync.service";
+import { EmailSyncService } from "../services/email-sync.service";
 
 export class OAuthController {
 

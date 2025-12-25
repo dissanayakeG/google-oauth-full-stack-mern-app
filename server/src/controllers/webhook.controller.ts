@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from "express";
-import { EmailSyncService } from "../services/email.sync.service";
+import { EmailSyncService } from "../services/email-sync.service";
 
-export class EmailSyncController {
+export class WebhookController {
     private emailSyncService = new EmailSyncService();
 
     /**
      * listen to gmail push notifications and sync db
      */
-    handleGmailPushNotification = (req: Request, res: Response, next: NextFunction) => {
+    handleGmailWebhooks = (req: Request, res: Response, next: NextFunction) => {
         res.sendStatus(204);
         const message = req.body.message?.data;
         if (!message) return;
