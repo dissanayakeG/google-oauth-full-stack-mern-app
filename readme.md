@@ -103,7 +103,7 @@ Done!
 
 # Next steps
 
-- implement web socket to sync realtime email updates in client side
 - implement csrf token machanism
 - for now, this application show only inbox mails, still need to show other boxes like sent,spam...etc
 - improve UI for nested emails
+- support multiple gmail accounts for a single user

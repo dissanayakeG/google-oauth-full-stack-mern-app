@@ -26,7 +26,7 @@ export class AuthService {
       scope: scopes,
       include_granted_scopes: true,
       state: state,
-      prompt: 'consent',
+      prompt: 'consent', //todo: remove prompt in production
     });
   };
 
@@ -159,7 +159,7 @@ export class AuthService {
     await User.update({ refreshToken: null }, { where: { id: userId } });
   };
 
-  generateAccessToken = async (user: CreateUserDTO): Promise<string> => {
+  generateAccessToken = async (user: User | CreateUserDTO): Promise<string> => {
     const token = jwt.sign(
       { userId: user.id, email: user.email, name: user.name },
       Environment.JWT_SECRET as string,
