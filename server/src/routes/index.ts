@@ -1,6 +1,6 @@
-import {Router} from 'express'
-import commonRoutes from './common.routes'
-import webhooks from './webhooks.routes'
+import { Router } from 'express';
+import commonRoutes from './common.routes';
+import webhooks from './webhooks.routes';
 
 const router = Router();
 

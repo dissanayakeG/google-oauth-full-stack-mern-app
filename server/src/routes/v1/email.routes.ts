@@ -1,5 +1,5 @@
-import { Router } from "express";
-import { EmailController } from "../../controllers/email.controller";
+import { Router } from 'express';
+import { EmailController } from '@/controllers/email.controller';
 
 const emailRoutes = Router();
 

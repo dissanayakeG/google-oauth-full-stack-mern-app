@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { logger } from '../utils/logger';
 
 // Extend Express Request to include user
 export interface AuthenticatedRequest extends Request {
@@ -12,10 +11,8 @@ export default function jwtAuth(
   res: Response,
   next: NextFunction
 ): void {
-
   const authHeader = req.header('Authorization');
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
-
 
   if (!token) {
     res.status(401).json({ message: 'Access Denied: No token provided' });
@@ -32,7 +29,7 @@ export default function jwtAuth(
     const verified = jwt.verify(token, secret);
     req.user = verified;
     next();
-  } catch (err) {
+  } catch {
     res.status(401).json({ message: 'Invalid or expired token' });
   }
 }

@@ -1,4 +1,4 @@
-import { AppError } from "./AppError";
+import { AppError } from './AppError';
 
 export class OAuthError extends AppError {
   constructor(message = 'OAuth failed') {

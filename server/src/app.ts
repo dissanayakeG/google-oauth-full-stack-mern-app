@@ -1,31 +1,33 @@
-import Environment from "./config/env.config";
-import express from "express";
-import cors from "cors";
-import session from "express-session";
+import Environment from './config/env.config';
+import express from 'express';
+import cors from 'cors';
+import session from 'express-session';
 import cookieParser from 'cookie-parser';
-import globalErrorHandler from "./middlewares/error.middleware";
-import { AppError } from "./errors/AppError";
-import { requestLogger } from "./middlewares/logger.middleware";
-import rateLimiter from "./middlewares/rate-limiter.middleware";
-import routerV1 from "./routes/v1";
-import router from "./routes";
+import globalErrorHandler from './middlewares/error.middleware';
+import { AppError } from './errors/AppError';
+import { requestLogger } from './middlewares/logger.middleware';
+import rateLimiter from './middlewares/rate-limiter.middleware';
+import routerV1 from './routes/v1';
+import router from './routes';
 
 const app = express();
 
 app.use(express.json()); // to parse application/json, otherwise req.body will be undefined
 
 // Required for cross-origin browser requests
-app.use(cors({
-  origin: Environment.FRONTEND_URL,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Access-Control-Allow-Credentials',
-    'X-CSRF-Token'
-  ],
-}));
+app.use(
+  cors({
+    origin: Environment.FRONTEND_URL,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Access-Control-Allow-Credentials',
+      'X-CSRF-Token',
+    ],
+  })
+);
 
 app.use(
   session({
@@ -46,7 +48,7 @@ app.use(cookieParser());
 app.use(requestLogger);
 
 // Routes
-app.use(router)
+app.use(router);
 
 //TODO : add shlow down middleware
 app.use('/api/v1', rateLimiter, routerV1);

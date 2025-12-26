@@ -7,10 +7,7 @@ import {
   Sequelize,
 } from 'sequelize';
 
-export class User extends Model<
-  InferAttributes<User>,
-  InferCreationAttributes<User>
-> {
+export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare id: CreationOptional<string>;
   declare name: string;
   declare email: string;
@@ -20,11 +17,11 @@ export class User extends Model<
   declare googleRefreshToken?: string | null;
   declare googleAccessToken?: string | null;
   declare preferences?: object | null;
-  declare gmailHistoryId?: string | null
+  declare gmailHistoryId?: string | null;
   declare readonly createdAt: CreationOptional<Date>;
   declare readonly updatedAt: CreationOptional<Date>;
 
-  static associate(models: any) {
+  static associate(models: { Email: typeof Model }) {
     User.hasMany(models.Email, { foreignKey: 'userId' });
   }
 }
@@ -43,7 +40,7 @@ export const initUserModel = (sequelize: Sequelize): typeof User => {
       email: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: false//only for dev testing,
+        unique: false, //only for dev testing,
       },
       picture: {
         type: DataTypes.STRING,

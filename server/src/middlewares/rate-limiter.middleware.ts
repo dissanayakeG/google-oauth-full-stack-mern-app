@@ -1,5 +1,5 @@
 import rateLimit from 'express-rate-limit';
-import Environment from '../config/env.config';
+import Environment from '@/config/env.config';
 
 const rateLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,

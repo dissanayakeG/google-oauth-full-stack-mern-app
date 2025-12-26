@@ -1,10 +1,10 @@
-import { Router } from "express";
-import { OAuthController } from "../../controllers/oauth.controller";
-import jwtAuth from "../../middlewares/auth.middleware";
+import { Router } from 'express';
+import { OAuthController } from '@/controllers/oauth.controller';
+import jwtAuth from '@/middlewares/auth.middleware';
 
 const oAuthRoutes = Router();
 
-const oAuthController = new OAuthController()
+const oAuthController = new OAuthController();
 
 oAuthRoutes.get('/google', oAuthController.login);
 oAuthRoutes.get('/google/callback', oAuthController.handleGoogleCallback);
