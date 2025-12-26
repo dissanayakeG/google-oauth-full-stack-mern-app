@@ -1,78 +1,94 @@
-import { UnauthorizedError } from "../errors/UnauthorizedError";
-import { EmailService } from "../services/email.service";
-import { NextFunction, Request, Response } from "express";
-
+import { EmailService } from '@/services/emails.service';
+import { Request, Response } from 'express';
+import { NotFoundError } from '@/errors/NotFoundError';
+import { apiResponse } from '@/utils/api.response';
+import { GetAllEmailsRequestQueryDTO } from '@/dtos/email.dto';
 
 export class EmailController {
+  private emailService = new EmailService();
 
-    private emailService = new EmailService();
+  index = async (
+    req: Request<unknown, unknown, unknown, GetAllEmailsRequestQueryDTO>,
+    res: Response
+  ) => {
+    const { limit = 20, offset = 0, search = '', isRead } = req.query;
 
-    getGmailLabels = async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user;
 
-        const user = req.user;
+    const filters = { search, isRead };
 
-        if (!user || typeof user === 'string') {
-            throw new UnauthorizedError('No refresh token provided');
-        }
+    const result = await this.emailService.findAll(
+      user.userId,
+      Number(limit),
+      Number(offset),
+      filters
+    );
 
-        const userId = (user as any).userId;
-        if (!userId) {
-            throw new UnauthorizedError('Unauthorized: User ID missing');
-        }
+    const formattedResult = {
+      emails: result.emails,
+      limit: Number(limit),
+      offset: Number(offset),
+      total: result.total,
+      hasMore: Number(offset) + Number(limit) < result.total,
+    };
 
-        const credentials = req.session?.credentials;
-        if (!credentials) {
-            throw new UnauthorizedError('No OAuth2 credentials found');
-        }
-        //todo : douche check this credintials, do i init googe oauth?
+    return apiResponse({
+      res,
+      data: formattedResult,
+      message: 'Emails fetched successfully',
+      status: 200,
+    });
+  };
 
-        const response = await this.emailService.fetchGmailLabels(credentials);
-        const labels = response.data.labels || [];
+  show = async (req: Request<{ id: string }>, res: Response) => {
+    const { userId } = req.user;
+    const emailId = Number(req.params.id);
 
-        res.json({ labels });
+    const email = await this.emailService.findOneWithBody(emailId, userId);
+
+    if (!email) {
+      throw new NotFoundError('Email not found');
     }
 
-    getEmailById = async (req: Request, res: Response, next: NextFunction) => {
+    const updatedEmail = await this.emailService.markAsRead(email.id);
 
-        const user = req.user as { userId: string };
-        const emailId = parseInt(req.params.id);
-
-        if (!user || !user.userId) {
-            throw new UnauthorizedError();
-        }
-
-        if (isNaN(emailId)) {
-            return res.status(400).json({ message: 'Invalid email ID' });
-        }
-
-        const email = await this.emailService.getEmailBody(emailId, user.userId);
-        res.json({ email });
+    if (!updatedEmail) {
+      throw new NotFoundError('Email not found');
     }
 
-    listUserEmails = async (req: Request, res: Response, next: NextFunction) => {
+    return apiResponse({
+      res,
+      data: {
+        id: updatedEmail.id,
+        subject: updatedEmail.subject,
+        sender: updatedEmail.sender,
+        recipient: updatedEmail.recipient,
+        date: updatedEmail.dateReceived,
+        isRead: updatedEmail.isRead,
+        body: {
+          html: updatedEmail.body?.html || '',
+          text: updatedEmail.body?.text || '',
+        },
+      },
+      message: 'Email fetched successfully',
+      status: 200,
+    });
+  };
 
-        const user = req.user as { userId: string };
-        const limit = parseInt(req.query.limit as string) || 20;
-        const offset = parseInt(req.query.offset as string) || 0;
-        const search = (req.query.search as string) || '';
-        const isRead = req.query.isRead as string;
+  labels = async (req: Request, res: Response) => {
+    const credentials = req.session.credentials;
 
-        if (!user || !user.userId) {
-            throw new UnauthorizedError();
-        }
-
-        const filters = {
-            search,
-            isRead: isRead ? isRead === 'true' : undefined,
-        };
-
-        const result = await this.emailService.getUserEmails(user.userId, limit, offset, filters);
-        res.json({
-            emails: result.emails,
-            limit,
-            offset,
-            total: result.total,
-            hasMore: offset + limit < result.total
-        });
+    if (!credentials) {
+      throw new NotFoundError('No OAuth2 credentials found');
     }
+
+    const response = await this.emailService.fetchLabels(credentials);
+
+    return apiResponse({
+      res,
+      data: { labels: response.data.labels || [] },
+      message: 'Labels fetched successfully',
+      status: 200,
+    });
+  };
 }

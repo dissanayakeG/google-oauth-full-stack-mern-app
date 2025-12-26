@@ -1,33 +1,33 @@
-import Environment from "./config/env.config";
-import express from "express";
-import cors from "cors";
-import routerV1 from "./routes/v1";
-import session from "express-session";
+import Environment from './config/env.config';
+import express from 'express';
+import cors from 'cors';
+import session from 'express-session';
 import cookieParser from 'cookie-parser';
-import { globalErrorHandler } from "./middlewares/globalErrorHandler";
-import { AppError } from "./errors/AppError";
-import { requestLogger } from "./middlewares/requestLogger";
-import rateLimiter from "./middlewares/rateLimiter";
-import commonRoutes from "./routes/common.routes";
-import emailNotificationRoutes from "./routes/email.notification.routes";
-
+import globalErrorHandler from './middlewares/error.middleware';
+import { requestLogger } from './middlewares/logger.middleware';
+import rateLimiter from './middlewares/rate-limiter.middleware';
+import routerV1 from './routes/v1';
+import router from './routes';
+import { NotFoundError } from './errors/NotFoundError';
 
 const app = express();
 
-//these two required to access the req.body
-app.use(express.json());
+app.use(express.json()); // to parse application/json, otherwise req.body will be undefined
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Access-Control-Allow-Credentials',
-    'X-CSRF-Token'
-  ],
-}));
+// Required for cross-origin browser requests
+app.use(
+  cors({
+    origin: Environment.FRONTEND_URL,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Access-Control-Allow-Credentials',
+      'X-CSRF-Token',
+    ],
+  })
+);
 
 app.use(
   session({
@@ -35,9 +35,9 @@ app.use(
     resave: false,
     saveUninitialized: true,
     cookie: {
-      secure: false,      // use true HTTPS
+      secure: Environment.NODE_ENV === 'production',
       httpOnly: true,
-      sameSite: 'lax',    // this allows redirects from Google to preserve the cookie
+      sameSite: 'lax',
     },
   })
 );
@@ -48,17 +48,14 @@ app.use(cookieParser());
 app.use(requestLogger);
 
 // Routes
-app.use(commonRoutes)
-
-//hanlde gmail push notification
-app.use('/api', emailNotificationRoutes);
+app.use(router);
 
 //TODO : add shlow down middleware
 app.use('/api/v1', rateLimiter, routerV1);
 
 // Runs only if no route matched
-app.use((req, res, next) => {
-  next(new AppError(`Route ${req.originalUrl} not found`, 404));
+app.use((req) => {
+  throw new NotFoundError(`Route not found - ${req.originalUrl}`);
 });
 
 // Global error handler

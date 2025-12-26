@@ -3,7 +3,6 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-
     await queryInterface.createTable('Users', {
       id: { primaryKey: true, autoIncrement: false, type: Sequelize.STRING },
       name: Sequelize.STRING,
@@ -14,7 +13,7 @@ module.exports = {
       googleRefreshToken: { type: Sequelize.TEXT, allowNull: true },
       googleAccessToken: { type: Sequelize.TEXT, allowNull: true },
       preferences: { type: Sequelize.JSON, allowNull: true },
-      gmailHistoryId: {type: Sequelize.STRING, allowNull: true, unique: true},
+      gmailHistoryId: { type: Sequelize.STRING, allowNull: true, unique: true },
       createdAt: Sequelize.DATE,
       updatedAt: Sequelize.DATE,
     });
@@ -22,5 +21,5 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('Users');
-  }
+  },
 };
