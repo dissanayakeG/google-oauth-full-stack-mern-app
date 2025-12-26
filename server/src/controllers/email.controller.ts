@@ -3,6 +3,7 @@ import { UnauthorizedError } from "../errors/UnauthorizedError";
 import { EmailService } from "../services/email.service";
 import { NextFunction, Request, Response } from "express";
 import { logger } from "../utils/logger";
+import { NotFoundError } from "../errors/NotFoundError";
 
 
 export class EmailController {
@@ -50,13 +51,17 @@ export class EmailController {
         const email = await this.emailService.getEmailBody(emailId, user.userId);
 
         if (!email) {
-            return res.json({ status: 404, message: 'Email not found' });
+
+            throw new NotFoundError();
+            
+            return res.status(404).json({ message: 'Email not found' });
         }
 
         const updatedEmail = await this.emailService.markEmailAsRead(email.id);
 
         if (!updatedEmail) {
-            return res.json({ status: 404, message: 'Email not found' });
+            throw new NotFoundError();
+            return res.status(404).json({ message: 'Email not found' });
         }
 
         const emailResponse = {
@@ -73,7 +78,7 @@ export class EmailController {
         };
         //associate defined in model as body
 
-        return res.json({ data: emailResponse });
+        res.status(200).json({ data: emailResponse });
     }
 
     listUserEmails = async (req: Request, res: Response, next: NextFunction) => {
