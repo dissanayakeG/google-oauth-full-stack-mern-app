@@ -1,8 +1,6 @@
-import { UnauthorizedError } from '@/errors/UnauthorizedError';
 import { EmailService } from '@/services/emails.service';
 import { Request, Response } from 'express';
 import { NotFoundError } from '@/errors/NotFoundError';
-import { JwtPayload } from 'jsonwebtoken';
 import { apiResponse } from '@/utils/api.response';
 import { GetAllEmailsRequestQueryDTO } from '@/schemas/email.schema';
 
@@ -42,66 +40,55 @@ export class EmailController {
     });
   };
 
-  show = async (req: Request, res: Response) => {
-    const user = req.user as { userId: string };
-    const emailId = parseInt(req.params.id);
+  show = async (req: Request<{ id: string }>, res: Response) => {
+    const { userId } = req.user;
+    const emailId = Number(req.params.id);
 
-    if (!user || !user.userId) {
-      throw new UnauthorizedError();
-    }
-
-    if (isNaN(emailId)) {
-      return res.status(400).json({ message: 'Invalid email ID' });
-    }
-
-    const email = await this.emailService.findOneWithBody(emailId, user.userId);
+    const email = await this.emailService.findOneWithBody(emailId, userId);
 
     if (!email) {
-      throw new NotFoundError();
+      throw new NotFoundError('Email not found');
     }
 
     const updatedEmail = await this.emailService.markAsRead(email.id);
 
     if (!updatedEmail) {
-      throw new NotFoundError();
+      throw new NotFoundError('Email not found');
     }
 
-    const emailResponse = {
-      id: updatedEmail.id,
-      subject: updatedEmail.subject,
-      sender: updatedEmail.sender,
-      recipient: updatedEmail.recipient,
-      date: updatedEmail.dateReceived,
-      isRead: updatedEmail.isRead,
-      body: {
-        html: updatedEmail.body?.html || '',
-        text: updatedEmail.body?.text || '',
+    return apiResponse({
+      res,
+      data: {
+        id: updatedEmail.id,
+        subject: updatedEmail.subject,
+        sender: updatedEmail.sender,
+        recipient: updatedEmail.recipient,
+        date: updatedEmail.dateReceived,
+        isRead: updatedEmail.isRead,
+        body: {
+          html: updatedEmail.body?.html || '',
+          text: updatedEmail.body?.text || '',
+        },
       },
-    };
-
-    res.status(200).json({ data: emailResponse });
+      message: 'Email fetched successfully',
+      status: 200,
+    });
   };
 
   labels = async (req: Request, res: Response) => {
-    const user = req.user;
+    const credentials = req.session.credentials;
 
-    if (!user || typeof user === 'string') {
-      throw new UnauthorizedError('No refresh token provided');
-    }
-
-    const userId = (user as JwtPayload).userId as string;
-    if (!userId) {
-      throw new UnauthorizedError('Unauthorized: User ID missing');
-    }
-
-    const credentials = req.session?.credentials;
     if (!credentials) {
-      throw new UnauthorizedError('No OAuth2 credentials found');
+      throw new NotFoundError('No OAuth2 credentials found');
     }
 
     const response = await this.emailService.fetchLabels(credentials);
-    const labels = response.data.labels || [];
 
-    res.json({ labels });
+    return apiResponse({
+      res,
+      data: { labels: response.data.labels || [] },
+      message: 'Labels fetched successfully',
+      status: 200,
+    });
   };
 }

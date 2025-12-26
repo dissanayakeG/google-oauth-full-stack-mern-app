@@ -62,9 +62,10 @@ api.interceptors.response.use(
           { withCredentials: true }
         );
 
-        setApiToken(data.accessToken);
-        originalRequest.headers['Authorization'] = `Bearer ${data.accessToken}`;
-        processQueue(null, data.accessToken);
+        const accessToken = data.data.accessToken;
+        setApiToken(accessToken);
+        originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+        processQueue(null, accessToken);
 
         return api(originalRequest);
       } catch (refreshError) {

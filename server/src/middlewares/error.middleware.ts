@@ -9,14 +9,14 @@ export default function globalErrorHandler(
   res: Response,
   _next: NextFunction
 ) {
-  logger.error(
-    {
-      err,
-      path: req.originalUrl,
-      method: req.method,
-    },
-    err.message
-  );
+  // logger.error(
+  //   {
+  //     err,
+  //     path: req.originalUrl,
+  //     method: req.method,
+  //   },
+  //   err.message
+  // );
 
   if (err instanceof AppError) {
     return apiResponse({

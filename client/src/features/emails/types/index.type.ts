@@ -17,6 +17,19 @@ export type Email = {
   isRead: boolean;
 };
 
+export type EmailDetail = {
+  id: number;
+  subject: string;
+  sender: string;
+  recipient: string;
+  date: string;
+  isRead: boolean;
+  body: {
+    html: string;
+    text: string;
+  };
+};
+
 export type EmailsResponse = {
   emails: Email[];
   total: number;

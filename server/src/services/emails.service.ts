@@ -57,7 +57,7 @@ export class EmailService {
   }
 
   async findOneWithBody(emailId: number, userId: string) {
-    const email = (await Email.findOne({
+    return await Email.findOne({
       where: { id: emailId, userId },
       include: [
         {
@@ -66,9 +66,7 @@ export class EmailService {
           attributes: ['html', 'text'],
         },
       ],
-    })) as (Email & { body?: EmailBody }) | null;
-
-    return email;
+    });
   }
 
   async markAsRead(emailId: number) {

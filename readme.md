@@ -84,7 +84,7 @@ ngrok http 5000 --host-header="localhost:5000"
 
 - Generated url will look something like this
 - https://unmarvelous-nonparentally-joline.ngrok-free.dev
-- Add `<generated url>/api/gmail/push` here.
+- Add `<generated url>/api/webhooks/<Environment.GMAIL_WEBHOOK_PATH>` here.
 
 - We can verify if the ngrok url is working by calling health-check url `<generated url>/health-check` from a curl request
   or directly from browser

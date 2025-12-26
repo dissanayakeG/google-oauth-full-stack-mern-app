@@ -7,6 +7,7 @@ import { logger } from '@/utils/logger';
 import { UnauthorizedError } from '@/errors/UnauthorizedError';
 import { EmailSyncService } from '@/services/emails-sync.service';
 import { CreateUserDTO } from '@/dtos/user.dto';
+import { apiResponse } from '@/utils/api.response';
 
 export class AuthController {
   private authService = new AuthService();
@@ -80,7 +81,12 @@ export class AuthController {
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    res.json({ accessToken });
+    return apiResponse({
+      res,
+      data: { accessToken },
+      message: 'Token refreshed successfully',
+      status: 200,
+    });
   };
 
   logout = async (req: Request, res: Response) => {
@@ -94,6 +100,12 @@ export class AuthController {
       secure: Environment.NODE_ENV === 'production',
       sameSite: 'strict',
     });
-    res.sendStatus(204);
+
+    return apiResponse({
+      res,
+      data: null,
+      message: 'Logged out successfully',
+      status: 204,
+    });
   };
 }

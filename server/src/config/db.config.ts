@@ -30,10 +30,8 @@ export const Email = initEmailModel(sequelize);
 export const EmailBody = initEmailBodyModel(sequelize);
 
 // Set up associations
-const models = { User, Email, EmailBody };
-
-User.associate(models);
-Email.associate(models);
-EmailBody.associate(models);
+Email.associate({ User, EmailBody });
+EmailBody.associate({ Email });
+User.associate({ Email });
 
 export default sequelize;

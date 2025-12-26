@@ -5,7 +5,11 @@ import {
   Model,
   Sequelize,
   DataTypes,
+  NonAttribute,
+  Association,
 } from 'sequelize';
+import type { EmailBody } from './emailBody';
+import type { User } from './user';
 
 export class Email extends Model<InferAttributes<Email>, InferCreationAttributes<Email>> {
   declare id: CreationOptional<number>;
@@ -21,8 +25,16 @@ export class Email extends Model<InferAttributes<Email>, InferCreationAttributes
   declare readonly createdAt: CreationOptional<Date>;
   declare readonly updatedAt: CreationOptional<Date>;
 
-  static associate(models: { User: typeof Model; EmailBody: typeof Model }) {
-    Email.belongsTo(models.User, { foreignKey: 'userId' });
+  // Associations
+  declare body?: NonAttribute<EmailBody>;
+
+  declare static associations: {
+    body: Association<Email, EmailBody>;
+    user: Association<Email, User>;
+  };
+
+  static associate(models: { User: typeof User; EmailBody: typeof EmailBody }) {
+    Email.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
     Email.hasOne(models.EmailBody, { foreignKey: 'emailId', as: 'body' });
   }
 }

@@ -1,17 +1,23 @@
 import api from '@/api';
 import { API_URLS } from '@/constants/common-constants';
-import type { GetEmailParams, GetEmailsParams } from '@/features/emails/types/index.type';
+import type { ApiResponse } from '@/types/api-response';
+import type {
+  EmailDetail,
+  EmailsResponse,
+  GetEmailParams,
+  GetEmailsParams,
+} from '@/features/emails/types/index.type';
 
-export const getEmails = async (params: GetEmailsParams) => {
-  const { data } = await api.get(API_URLS.EMAILS, {
+export const getEmails = async (params: GetEmailsParams): Promise<EmailsResponse> => {
+  const { data } = await api.get<ApiResponse<EmailsResponse>>(API_URLS.EMAILS, {
     params,
   });
 
-  return data?.data;
+  return data.data;
 };
 
-export const getEmail = async (params: GetEmailParams) => {
-  const { data } = await api.get(`${API_URLS.EMAIL}/${params.id}`);
+export const getEmail = async (params: GetEmailParams): Promise<EmailDetail> => {
+  const { data } = await api.get<ApiResponse<EmailDetail>>(`${API_URLS.EMAIL}/${params.id}`);
 
-  return data?.data;
+  return data.data;
 };

@@ -37,6 +37,7 @@ const envSchema = z.object({
   GOOGLE_PUSH_NOTIFICATION_TOPIC_NAME: z
     .string()
     .min(1, 'GOOGLE_PUSH_NOTIFICATION_TOPIC_NAME is required'),
+  GMAIL_WEBHOOK_PATH: z.string().min(1, 'GMAIL_WEBHOOK_PATH is required'),
 });
 
 const result = envSchema.safeParse(process.env);

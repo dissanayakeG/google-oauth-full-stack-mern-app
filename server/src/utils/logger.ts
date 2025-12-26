@@ -10,7 +10,6 @@ if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 
-// Main application logger (terminal output)
 export const logger = pino({
   level: isProduction ? 'info' : 'debug',
   transport: isProduction
@@ -25,7 +24,6 @@ export const logger = pino({
       },
 });
 
-// HTTP request logger (file output only)
 export const httpLogger = pino({
   level: 'info',
   transport: {
