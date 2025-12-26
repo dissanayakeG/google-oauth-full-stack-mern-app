@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { EmailController } from '@/controllers/email.controller';
 import { validateParams, validateQuery } from '@/middlewares/validate.middleware';
-import { emailIdParamsSchema, emailsQuerySchema } from '@/schemas/email.schema';
+import { emailIdParamsSchema, emailsQuerySchema } from '@/dtos/email.dto';
 
 const emailsRoutes = Router();
 

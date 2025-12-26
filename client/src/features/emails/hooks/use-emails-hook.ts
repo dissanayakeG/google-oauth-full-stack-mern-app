@@ -7,5 +7,7 @@ export const useEmails = (params: GetEmailsParams) => {
   return useQuery({
     queryKey: [QUERY_KEYS.EMAILS, params],
     queryFn: () => getEmails(params),
+    refetchInterval: 30 * 1000, // fetch every 30 seconds, only for dev testing
+    refetchOnWindowFocus: true,
   });
 };

@@ -1,5 +1,6 @@
 import 'express-session';
 
+//extending the existing SessionData interface that comes from express-session.
 declare module 'express-session' {
   interface SessionData {
     state?: string;
@@ -7,5 +8,3 @@ declare module 'express-session' {
     userId?: string;
   }
 }
-
-//extending the existing SessionData interface that comes from express-session. TypeScript automatically merges your additions with the original type.

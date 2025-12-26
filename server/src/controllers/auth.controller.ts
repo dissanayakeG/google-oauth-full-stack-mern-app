@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { AuthService } from '@/services/auth.service';
 import Environment from '@/config/env.config';
-import { GoogleCallbackRequestQueryDTO } from '@/types/oauth.dto';
+import { GoogleCallbackRequestQueryDTO } from '@/dtos/oauth.dto';
 import { logger } from '@/utils/logger';
 import { UnauthorizedError } from '@/errors/UnauthorizedError';
 import { EmailSyncService } from '@/services/emails-sync.service';

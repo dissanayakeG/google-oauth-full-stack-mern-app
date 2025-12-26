@@ -2,7 +2,7 @@ import { EmailService } from '@/services/emails.service';
 import { Request, Response } from 'express';
 import { NotFoundError } from '@/errors/NotFoundError';
 import { apiResponse } from '@/utils/api.response';
-import { GetAllEmailsRequestQueryDTO } from '@/schemas/email.schema';
+import { GetAllEmailsRequestQueryDTO } from '@/dtos/email.dto';
 
 export class EmailController {
   private emailService = new EmailService();
