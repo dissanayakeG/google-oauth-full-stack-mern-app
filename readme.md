@@ -1,3 +1,5 @@
+Reference full guide - [fullstack-production-standard-app](https://dissanayakeg.github.io/fullstack-production-standard-app.html)
+
 # Setup
 
 ## setup front end
@@ -83,7 +85,7 @@ ngrok http 5000 --host-header="localhost:5000"
 ```
 
 - Generated url will look something like this
-- https://unmarvelous-nonparentally-joline.ngrok-free.dev
+- https://example.ngrok-free.dev
 - Add `<generated url>/api/webhooks/<Environment.GMAIL_WEBHOOK_PATH>` here.
 
 - We can verify if the ngrok url is working by calling health-check url `<generated url>/health-check` from a curl request
