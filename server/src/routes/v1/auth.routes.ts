@@ -1,15 +1,17 @@
 import { Router } from 'express';
-import { OAuthController } from '@/controllers/oauth.controller';
+import { AuthController } from '@/controllers/auth.controller';
 import jwtAuth from '@/middlewares/auth.middleware';
 
-const oAuthRoutes = Router();
+const authRoutes = Router();
 
-const oAuthController = new OAuthController();
+const authController = new AuthController();
 
-oAuthRoutes.get('/google', oAuthController.login);
-oAuthRoutes.get('/google/callback', oAuthController.handleGoogleCallback);
-oAuthRoutes.get('/me', jwtAuth, oAuthController.authUser);
-oAuthRoutes.post('/refresh', oAuthController.refresh);
-oAuthRoutes.post('/logout', jwtAuth, oAuthController.logout);
+authRoutes.get('/google', authController.redirectToGoogle);
 
-export default oAuthRoutes;
+authRoutes.get('/google/callback', authController.handleCallback);
+
+authRoutes.post('/refresh', authController.refreshToken);
+
+authRoutes.post('/logout', jwtAuth, authController.logout);
+
+export default authRoutes;

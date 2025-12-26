@@ -1,9 +1,11 @@
+import Environment from '@/config/env.config';
+import { UnauthorizedError } from '@/errors/UnauthorizedError';
+import { User, JwtPayload } from '@/types';
 import { Request, Response, NextFunction } from 'express';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 
-// Extend Express Request to include user
 export interface AuthenticatedRequest extends Request {
-  user?: string | JwtPayload;
+  user: User;
 }
 
 export default function jwtAuth(
@@ -15,21 +17,14 @@ export default function jwtAuth(
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
 
   if (!token) {
-    res.status(401).json({ message: 'Access Denied: No token provided' });
-    return;
-  }
-
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    res.status(500).json({ message: 'Internal server error' });
-    return;
+    throw new UnauthorizedError();
   }
 
   try {
-    const verified = jwt.verify(token, secret);
-    req.user = verified;
+    const { userId, email } = jwt.verify(token, Environment.JWT_SECRET) as JwtPayload;
+    req.user = { userId, email };
     next();
   } catch {
-    res.status(401).json({ message: 'Invalid or expired token' });
+    throw new UnauthorizedError();
   }
 }

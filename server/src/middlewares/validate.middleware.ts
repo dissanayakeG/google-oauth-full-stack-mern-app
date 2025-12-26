@@ -1,20 +1,39 @@
-import { ZodObject, ZodRawShape, ZodError } from 'zod';
+import { ZodSchema } from 'zod';
 import { Request, Response, NextFunction } from 'express';
+import { BadRequestError } from '@/errors/BadRequestError';
 
-export const validate =
-  <T extends ZodRawShape>(schema: ZodObject<T>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    try {
-      req.body = schema.parse(req.body);
-      next();
-    } catch (err) {
-      const zodError = err as ZodError;
+export const validateBody = (schema: ZodSchema) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.body);
 
-      // reqLogger.warn(
-      //     { err, body: req.body, method: req.method, url: req.url },
-      //     'Validation failed dd'
-      // );
-
-      return res.status(400).json({ message: 'Validation failed fgfg', errors: zodError.errors });
+    if (!result.success) {
+      throw new BadRequestError(`${result.error.issues.map((e) => e.message).join(', ')}`);
     }
+
+    next();
   };
+};
+
+export const validateParams = (schema: ZodSchema) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.params);
+
+    if (!result.success) {
+      throw new BadRequestError(`${result.error.issues.map((e) => e.message).join(', ')}`);
+    }
+
+    next();
+  };
+};
+
+export const validateQuery = (schema: ZodSchema) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.query);
+
+    if (!result.success) {
+      throw new BadRequestError(`${result.error.issues.map((e) => e.message).join(', ')}`);
+    }
+
+    next();
+  };
+};

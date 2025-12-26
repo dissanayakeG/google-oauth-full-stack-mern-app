@@ -10,7 +10,7 @@ import { createOAuth2Client } from '@/config/google.config';
 import { OAuthError } from '@/errors/OAuthError';
 import { CSRFError } from '@/errors/CSRFError';
 
-export class OAuthService {
+export class AuthService {
   private oauth2Client = createOAuth2Client();
 
   generateAuthUrl = (state: string): string => {
@@ -26,11 +26,11 @@ export class OAuthService {
       scope: scopes,
       include_granted_scopes: true,
       state: state,
-      prompt: 'consent', // force consent to always get a refresh token during development
+      prompt: 'consent',
     });
   };
 
-  handleGoogleCallback = async (
+  exchangeCodeForTokens = async (
     code: string,
     expectedState: string | undefined,
     actualState: string | undefined
@@ -69,7 +69,7 @@ export class OAuthService {
     };
   };
 
-  createOrUpdateUser = async (userData: CreateUserDTO): Promise<User> => {
+  findOrCreateUser = async (userData: CreateUserDTO): Promise<User> => {
     if (!userData.id || !userData.email || !userData.name) {
       throw new ValidationError('Invalid user data', []);
     }
@@ -89,13 +89,11 @@ export class OAuthService {
 
     let needsSave = false;
 
-    // Update tokens if they are provided and different
     if (userData.googleAccessToken && userData.googleAccessToken !== user.googleAccessToken) {
       user.googleAccessToken = userData.googleAccessToken;
       needsSave = true;
     }
 
-    // Note: Google only sends refresh_token on first login or if prompt=consent
     if (userData.googleRefreshToken && userData.googleRefreshToken !== user.googleRefreshToken) {
       user.googleRefreshToken = userData.googleRefreshToken;
       needsSave = true;
@@ -116,24 +114,23 @@ export class OAuthService {
     return user;
   };
 
-  refreshSession = async (refreshToken: string) => {
+  rotateTokens = async (refreshToken: string) => {
     const decoded = await this.verifyRefreshToken(refreshToken);
 
     if (typeof decoded !== 'object' || !decoded.userId) {
       throw new UnauthorizedError('Invalid refresh token payload');
     }
 
-    const user = await this.findUserByRefreshToken(refreshToken);
+    const user = await this.findUserByToken(refreshToken);
 
     if (!user) {
       throw new UnauthorizedError('Refresh token does not match any user');
     }
 
-    // token rotation
-    await this.clearRefreshToken(decoded.userId);
+    await this.revokeRefreshToken(decoded.userId);
     const accessToken = await this.generateAccessToken(user);
     const newRefreshToken = await this.generateRefreshToken(user);
-    await this.saveRefreshToken(user.id, newRefreshToken);
+    await this.storeRefreshToken(user.id, newRefreshToken);
 
     return { accessToken, newRefreshToken };
   };
@@ -142,11 +139,11 @@ export class OAuthService {
     return User.findByPk(userId);
   };
 
-  findUserByRefreshToken = async (refreshToken: string) => {
+  findUserByToken = async (refreshToken: string) => {
     return User.findOne({ where: { refreshToken } });
   };
 
-  saveRefreshToken = async (userId: string, refreshToken: string) => {
+  storeRefreshToken = async (userId: string, refreshToken: string) => {
     if (!userId || !refreshToken) {
       throw new ValidationError('Invalid refresh token payload', []);
     }
@@ -154,7 +151,7 @@ export class OAuthService {
     await User.update({ refreshToken }, { where: { id: userId } });
   };
 
-  clearRefreshToken = async (userId: string): Promise<void> => {
+  revokeRefreshToken = async (userId: string): Promise<void> => {
     if (!userId) {
       throw new ValidationError('User ID is required', []);
     }

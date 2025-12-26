@@ -13,7 +13,7 @@
     "migrate:undo": "sequelize-cli db:migrate:undo",
     "migrate:undo:all": "sequelize-cli db:migrate:undo:all",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "lint:fix": "eslint . --fix .",
     "format": "prettier --check .",
     "format:fix": "prettier --write ."
   },

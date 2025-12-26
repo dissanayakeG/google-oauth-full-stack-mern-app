@@ -70,7 +70,6 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         setApiToken(null);
-        console.log('😁😁😁😁😁😁😁😁😁😁', refreshError);
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {

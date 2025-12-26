@@ -1,15 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '@/errors/AppError';
 import { logger } from '@/utils/logger';
+import { apiResponse } from '@/utils/api.response';
 
 export default function globalErrorHandler(
-  err: Error,
+  err: Error | AppError,
   req: Request,
   res: Response,
   _next: NextFunction
 ) {
-  const isAppError = err instanceof AppError;
-
   logger.error(
     {
       err,
@@ -19,16 +18,19 @@ export default function globalErrorHandler(
     err.message
   );
 
-  if (isAppError) {
-    return res.status(err.statusCode).json({
-      success: false,
+  if (err instanceof AppError) {
+    return apiResponse({
+      res,
+      data: null,
       message: err.message,
-      ...('details' in err && { errors: (err as AppError & { details?: unknown }).details }),
+      status: err.statusCode,
     });
   }
 
-  return res.status(500).json({
-    success: false,
-    message: 'Internal server error11',
+  return apiResponse({
+    res,
+    data: null,
+    message: err.message,
+    status: 500,
   });
 }

@@ -4,11 +4,11 @@ import cors from 'cors';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import globalErrorHandler from './middlewares/error.middleware';
-import { AppError } from './errors/AppError';
 import { requestLogger } from './middlewares/logger.middleware';
 import rateLimiter from './middlewares/rate-limiter.middleware';
 import routerV1 from './routes/v1';
 import router from './routes';
+import { NotFoundError } from './errors/NotFoundError';
 
 const app = express();
 
@@ -54,8 +54,8 @@ app.use(router);
 app.use('/api/v1', rateLimiter, routerV1);
 
 // Runs only if no route matched
-app.use((req, res, next) => {
-  next(new AppError(`Route ${req.originalUrl} not found`, 404));
+app.use((req) => {
+  throw new NotFoundError(`Route not found - ${req.originalUrl}`);
 });
 
 // Global error handler

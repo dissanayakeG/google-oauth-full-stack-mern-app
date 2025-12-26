@@ -1,11 +1,15 @@
 import { Router } from 'express';
-import oAuthRoutes from './auth.routes';
-import emailRoutes from './email.routes';
+import authRoutes from './auth.routes';
+import emailsRoutes from './emails.routes';
+import usersRoutes from './users.routes';
 import jwtAuth from '@/middlewares/auth.middleware';
 
 const routerV1 = Router();
 
-routerV1.use('/auth', oAuthRoutes);
-routerV1.use('/email', jwtAuth, emailRoutes);
+routerV1.use('/auth', authRoutes);
+
+routerV1.use('/users', usersRoutes);
+
+routerV1.use('/emails', jwtAuth, emailsRoutes);
 
 export default routerV1;

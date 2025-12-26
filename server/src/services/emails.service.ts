@@ -7,17 +7,16 @@ import { Op, WhereOptions } from 'sequelize';
 export class EmailService {
   private oauth2Client = createOAuth2Client();
 
-  fetchGmailLabels = (credentials: Auth.Credentials) => {
+  fetchLabels = (credentials: Auth.Credentials) => {
     this.oauth2Client.setCredentials(credentials);
     const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
     return gmail.users.labels.list({ userId: 'me' });
   };
 
-  //get from db
-  async getUserEmails(
+  async findAll(
     userId: string,
-    limit: number = 20,
-    offset: number = 0,
+    limit: number,
+    offset: number,
     filters?: { search?: string; isRead?: boolean }
   ) {
     const where: WhereOptions<Email> = { userId };
@@ -41,18 +40,8 @@ export class EmailService {
       order: [['dateReceived', 'DESC']],
       limit,
       offset,
-      raw: true, //faster queries without model instances
+      raw: true,
     });
-
-    // return {
-    //     emails: rows,
-    //     pagination: {
-    //         total: count,
-    //         limit,
-    //         offset,
-    //         hasMore: count > offset + limit
-    //     }
-    // };
 
     return {
       emails: rows.map((email) => ({
@@ -67,7 +56,7 @@ export class EmailService {
     };
   }
 
-  async getEmailBody(emailId: number, userId: string) {
+  async findOneWithBody(emailId: number, userId: string) {
     const email = (await Email.findOne({
       where: { id: emailId, userId },
       include: [
@@ -82,7 +71,7 @@ export class EmailService {
     return email;
   }
 
-  async markEmailAsRead(emailId: number) {
+  async markAsRead(emailId: number) {
     await Email.update({ isRead: true }, { where: { id: emailId } });
 
     return await Email.findByPk(emailId, {

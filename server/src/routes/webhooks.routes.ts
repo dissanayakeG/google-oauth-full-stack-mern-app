@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { WebhookController } from '@/controllers/webhook.controller';
 
-const webhooks = Router();
+const webhooksRoutes = Router();
 
 const webhookController = new WebhookController();
 
-webhooks.post('/gmail/push', webhookController.handleGmailWebhooks);
-export default webhooks;
+webhooksRoutes.post('/gmail/push', webhookController.receiveGmailPush);
+
+export default webhooksRoutes;

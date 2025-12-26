@@ -4,6 +4,7 @@ export const QUERY_KEYS = {
 } as const;
 
 export const API_URLS = {
-  EMAIL_LIST: '/email/list',
-  EMAIL: '/email',
+  EMAILS: '/emails',
+  EMAIL: '/emails',
+  USER_ME: '/users/me',
 } as const;

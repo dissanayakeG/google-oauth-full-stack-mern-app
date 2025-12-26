@@ -6,12 +6,12 @@ import Error from '@/components/app/app-error';
 
 export default function AuthLayout() {
   const fetchUser = async () => {
-    const { data } = await api.get('/auth/me');
+    const { data } = await api.get('/users/me');
     return data;
   };
 
   const { isLoading, error, refetch } = useQuery({
-    queryKey: ['auth me'],
+    queryKey: ['user', 'me'],
     queryFn: () => fetchUser(),
   });
 

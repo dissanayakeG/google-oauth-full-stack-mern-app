@@ -1,26 +1,26 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
-import { OAuthService } from '@/services/oauth.service';
+import { AuthService } from '@/services/auth.service';
 import Environment from '@/config/env.config';
 import { GoogleCallbackRequestQueryDTO } from '@/types/oauth.dto';
 import { logger } from '@/utils/logger';
 import { UnauthorizedError } from '@/errors/UnauthorizedError';
-import { EmailSyncService } from '@/services/email-sync.service';
+import { EmailSyncService } from '@/services/emails-sync.service';
 import { CreateUserDTO } from '@/dtos/user.dto';
 
-export class OAuthController {
-  private oAuthservice = new OAuthService();
+export class AuthController {
+  private authService = new AuthService();
   private emailSyncService = new EmailSyncService();
 
-  login = (req: Request, res: Response) => {
+  redirectToGoogle = (req: Request, res: Response) => {
     const state = crypto.randomBytes(32).toString('hex');
     req.session.state = state;
-    const authorizationUrl = this.oAuthservice.generateAuthUrl(state);
+    const authorizationUrl = this.authService.generateAuthUrl(state);
 
     res.redirect(authorizationUrl);
   };
 
-  handleGoogleCallback = async (
+  handleCallback = async (
     req: Request<unknown, unknown, unknown, GoogleCallbackRequestQueryDTO>,
     res: Response
   ) => {
@@ -32,23 +32,21 @@ export class OAuthController {
       );
     }
 
-    const { tokens, googleUser } = await this.oAuthservice.handleGoogleCallback(
+    const { tokens, googleUser } = await this.authService.exchangeCodeForTokens(
       code,
       req.session?.state,
       state
     );
 
-    const createdUser = await this.oAuthservice.createOrUpdateUser({
+    const createdUser = await this.authService.findOrCreateUser({
       ...googleUser,
       googleAccessToken: tokens.access_token,
       googleRefreshToken: tokens.refresh_token,
     } as CreateUserDTO);
 
-    // Generate a Refresh Token
-    const refreshToken = await this.oAuthservice.generateRefreshToken(createdUser);
+    const refreshToken = await this.authService.generateRefreshToken(createdUser);
 
-    // Save refresh token to DB
-    await this.oAuthservice.saveRefreshToken(createdUser.id, refreshToken);
+    await this.authService.storeRefreshToken(createdUser.id, refreshToken);
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
@@ -61,20 +59,19 @@ export class OAuthController {
     req.session.userId = createdUser.id;
 
     logger.info('Start fetch from initial callback');
-    //TODO: this should happen only in first login
     this.emailSyncService.startGmailWatch(createdUser.email, tokens.access_token!);
 
     return res.redirect(`${Environment.FRONTEND_URL}/emails`);
   };
 
-  refresh = async (req: Request, res: Response) => {
+  refreshToken = async (req: Request, res: Response) => {
     const refreshToken = req.cookies?.refreshToken;
 
     if (!refreshToken) {
       throw new UnauthorizedError('No refresh token provided');
     }
 
-    const { accessToken, newRefreshToken } = await this.oAuthservice.refreshSession(refreshToken);
+    const { accessToken, newRefreshToken } = await this.authService.rotateTokens(refreshToken);
 
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
@@ -86,15 +83,11 @@ export class OAuthController {
     res.json({ accessToken });
   };
 
-  authUser = async (req: Request, res: Response) => {
-    res.json({ user: req.user });
-  };
-
   logout = async (req: Request, res: Response) => {
     const refreshToken = req.cookies.refreshToken;
-    const user = await this.oAuthservice.findUserByRefreshToken(refreshToken);
+    const user = await this.authService.findUserByToken(refreshToken);
 
-    if (refreshToken && user) await this.oAuthservice.clearRefreshToken(user.id);
+    if (refreshToken && user) await this.authService.revokeRefreshToken(user.id);
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
