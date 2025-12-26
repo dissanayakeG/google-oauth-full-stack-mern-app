@@ -1,9 +1,9 @@
-express-be/node_modules/
-express-be/.env
+client/node_modules/
+client/.env
 
-react-fe/node_modules/
-react-fe/.env
-
+server/node_modules/
+server/.env
+server/logs/
 
 .DS_Store
 .vscode/
