@@ -1,6 +1,6 @@
 For a detailed guide on building fullstack production-standard applications, see my guide: [fullstack-production-standard-app](https://dissanayakeg.github.io/fullstack-production-standard-app.html)
 
-📝 **More of my work:** Check out my other technical articles and projects at [dissanayakeg.github.io](https://dissanayakeg.github.io/)
+📝 **More of my work:** Check out my other technical articles at [dissanayakeg.github.io](https://dissanayakeg.github.io/)
 
 # Setup
 
